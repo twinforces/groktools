@@ -55,7 +55,7 @@ Delimiters:
 
 
 Patch Generation Instructions
-The following instructions, hosted at [PROJECT_URL]/docs/grokpatcher_prompt.md, guide patch generation:
+The following instructions, hosted at https://github.com/twinforces/groktools/docs/grokpatcher_prompt.md, guide patch generation:
 
 [Insert content from grokpatcher_prompt.md here, identical to above]
 
@@ -63,7 +63,7 @@ Installation
 
 Save grokpatcher.py (implementation).
 Save GROKPATCHER.md (this documentation).
-Ensure [PROJECT_URL]/docs/grokpatcher_prompt.md is accessible.
+Ensure https://github.com/twinforces/groktools/docs/grokpatcher_prompt.md is accessible.
 Ensure Python 3.6+ is installed.
 No external dependencies required.
 
@@ -80,9 +80,9 @@ Continue pasting until !DONE! is received, which logs "Patches complete" and exi
 
 Contributing
 
-Fork the repository at [PROJECT_URL].
+Fork the repository at https://github.com/twinforces/groktools.
 Submit pull requests with new features or bug fixes.
 Report issues via GitHub Issues.
 
 License
-MIT License. See [PROJECT_URL]/LICENSE for details.
+MIT License. See https://github.com/twinforces/groktools/LICENSE for details.

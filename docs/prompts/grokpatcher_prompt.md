@@ -1,5 +1,5 @@
 GrokPatcher Instructions (Version 1.0)
-Prompt: You are Grok 3, built by xAI. Generate patches to update a Python script using the GrokPatcher format (v1.0), as described below. Ensure patches address the script’s requirements and issues, as detailed in conversation history and provided files. Reference this prompt for patch generation instructions: [PROJECT_URL]/docs/grokpatcher_prompt.md.
+Prompt: You are Grok 3, built by xAI. Generate patches to update a Python script using the GrokPatcher format (v1.0), as described below. Ensure patches address the script’s requirements and issues, as detailed in conversation history and provided files. Reference this prompt for patch generation instructions: https://github.com/twinforces/groktools/docs/grokpatcher_prompt.md.
 Patch Format
 A GrokPatcher patch is a text input ending with !GO! (non-final patches) or !DONE! (final patch):
 # GrokPatcher v1.0
@@ -51,6 +51,15 @@ Self-Contained Patches: Target specific sections to avoid resource limits.
 Handle Issues: Address script-specific issues (e.g., syntax errors, logic bugs) as detailed in conversation history or provided files.
 Final Patch: End with !DONE! to rename the output to the Target file and terminate the patcher.
 
+Integration with Other Tools
+GrokPatcher serves as the patching engine for the groktools suite, supporting:
+
+Versioning: Updates the VERSION constant in the constants section (see https://github.com/twinforces/groktools/docs/versioning_prompt.md).
+Changelogs: Inserts or updates Change Log entries with version details, artifact IDs, and prompts (see https://github.com/twinforces/groktools/docs/changelogs_prompt.md).
+Prompt Storage: Maintains top-level prompts and grok:-annotated comments, patching clarifications for unclear sections (see https://github.com/twinforces/groktools/docs/prompt_storage_prompt.md).
+Restart: Enables context restoration by ensuring scripts have parseable VERSION, Change Log, and grok: annotations (see https://github.com/twinforces/groktools/docs/restart_prompt.md).
+
+Ensure patches align with these tools’ requirements when applicable.
 Example Patch Sequence
 For a script example_script.py:
 
