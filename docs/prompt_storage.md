@@ -3,16 +3,16 @@ Prompt Storage is a groktools component that ensures Python scripts maintain a t
 Features
 
 Top-Level Prompt: A docstring at the script’s top, referencing the GrokPatcher prompt for patch instructions.
-grok: Annotations: Comments prefixed with # grok: to explain key functions, blocks, or complex logic, terminated with # korg: for multiline comments.
-Clarification Process: Queries unclear sections and patches clarifications as # grok: comments.
+grok: Annotations: Comments prefixed with # grok: to explain key functions, blocks, or complex logic, terminated with # korg: for multiline comments, with user descriptions allowed before grok: content.
+Clarification Process: Queries unclear sections and patches clarifications as grok: comments.
 Integration: Works with GrokPatcher’s anchor-based patching system.
 
 Prompt Storage Requirements
 
-Top-Level Prompt: Include a docstring at the script’s top (e.g., """Generate changes using GrokPatcher as described in [PROJECT_URL]/docs/grokpatcher_prompt.md.""").
-grok: Annotations: Add # grok: comments before major functions, complex blocks, or unclear sections, using # korg: for multiline termination.
+Top-Level Prompt: Include a docstring at the script’s top (e.g., """Generate changes using GrokPatcher as described in https://github.com/twinforces/groktools/docs/grokpatcher_prompt.md.""").
+grok: Annotations: Add # grok: comments before major functions, complex blocks, or unclear sections, using # korg: for multiline termination, with user descriptions optional.
 Clarification Process: Identify unclear sections, query the user, and patch clarifications as # grok: comments.
-Updates: Maintain and expand annotations with each patch.
+Updates: Maintain and expand annotations with each patch, ensuring 3am clarity for coders.
 
 Patch Format (via GrokPatcher)
 A GrokPatcher patch including prompt storage:
@@ -31,7 +31,7 @@ Action: replace
 Content:
     # ARTIFICIAL ANCHOR: prompt
     """
-    Generate changes using GrokPatcher as described in [PROJECT_URL]/docs/grokpatcher_prompt.md.
+    Generate changes using GrokPatcher as described in https://github.com/twinforces/groktools/docs/grokpatcher_prompt.md.
     """
 
 [Section]
@@ -39,20 +39,20 @@ Anchor: function_process_data
 AnchorType: natural
 Action: replace
 Content:
-    # grok: Parse input data using regex to extract fields.
-    # Additional details about parsing logic.
+    # User: Process input data for analysis.
+    # grok: Parse input data using regex to extract fields, clarified per user input.
     # korg:
     def process_data(input_data):
         # Content with backticks escaped as \`
 !GO!
 
 
-Header Fields: As per GrokPatcher (see [PROJECT_URL]/docs/grokpatcher_prompt.md).
+Header Fields: As per GrokPatcher (see https://github.com/twinforces/groktools/docs/grokpatcher_prompt.md).
 Section Fields: Update the top-level prompt and add/update grok: annotations.
 Delimiters: !GO! for non-final patches, !DONE! for the final patch.
 
 Patch Generation Instructions
-The following instructions, hosted at [PROJECT_URL]/docs/prompt_storage_prompt.md, guide prompt storage:
+The following instructions, hosted at https://github.com/twinforces/groktools/docs/prompt_storage_prompt.md, guide prompt storage:
 
 [Insert content from prompt_storage_prompt.md here, identical to above]
 
@@ -60,7 +60,7 @@ Installation
 
 Save grokpatcher.py (GrokPatcher implementation).
 Save PROMPT_STORAGE.md (this documentation).
-Ensure [PROJECT_URL]/docs/prompt_storage_prompt.md is accessible.
+Ensure https://github.com/twinforces/groktools/docs/prompt_storage_prompt.md is accessible.
 Ensure Python 3.6+ is installed.
 No external dependencies required.
 
@@ -74,9 +74,9 @@ Verify the top-level prompt and grok: annotations in the script after patching.
 
 Contributing
 
-Fork the repository at [PROJECT_URL].
+Fork the repository at https://github.com/twinforces/groktools.
 Submit pull requests with new features or bug fixes.
 Report issues via GitHub Issues.
 
 License
-MIT License. See [PROJECT_URL]/LICENSE for details.
+MIT License. See https://github.com/twinforces/groktools/LICENSE for details.
