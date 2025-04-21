@@ -1,5 +1,8 @@
 grokpatcher (Version 1.0)
 GrokPatcher is a lightweight, continuous patching system for applying updates to Python scripts, designed to handle large files and avoid resource limits. It uses natural and artificial anchors to target code sections, with !GO!, !NEXT!, and !DONE! delimiters for seamless patch input. Part of the groktools suite, it integrates with Versioning, Changelogs, Prompt Storage, and Restart tools for robust script maintenance. Tell Grok to read prompts/grokpatcher_prompt.md to use this feature, or https://github.com/twinforces/groktools/docs/prompts/groktools_meta_prompt.md to use all features.
+
+Why: Grok has limits on responses which causes large scripts to be truncated. It tries to ameliorate this by producing partial diffs, but it can be tedious to track "...rest remains the same..." when its buried in a script. Hence, automation!
+
 Features
 
 Continuous Operation: Runs as a service, accepting patches via stdin until !DONE! terminates it.
