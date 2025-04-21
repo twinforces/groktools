@@ -28,7 +28,7 @@ Description: Provides traceability for script evolution, documenting each update
 
 Prompt Storage:
 
-Purpose: Maintains a top-level prompt and grok:-annotated comments in scripts, with a process to clarify unclear sections and patch explanations back.
+Purpose: Maintains a top-level prompt and grok:-annotated comments in scripts, with a process to clarify unclear sections and patch explanations back, including fileref: for external file references.
 Prompt: https://github.com/twinforces/groktools/docs/prompts/prompt_storage_prompt.md
 Doc: https://github.com/twinforces/groktools/docs/prompt_storage.md
 Description: Enhances script documentation, ensuring clear, maintainable code with user-verified explanations, using # korg: for multiline termination.
@@ -36,10 +36,10 @@ Description: Enhances script documentation, ensuring clear, maintainable code wi
 
 Restart:
 
-Purpose: Bootstraps new conversations by reading the meta prompt and a script’s current version, parsing VERSION, Change Log, and grok: annotations to restore context.
+Purpose: Bootstraps new conversations by reading the meta prompt and a script, parsing grok: annotations to restore context, with optional enhancement from the Change Log.
 Prompt: https://github.com/twinforces/groktools/docs/prompts/restart_prompt.md
 Doc: https://github.com/twinforces/groktools/docs/restart.md
-Description: Enables seamless continuation of script maintenance by re-establishing context from script state.
+Description: Enables seamless continuation of script maintenance by re-establishing context from grok: annotations.
 
 
 

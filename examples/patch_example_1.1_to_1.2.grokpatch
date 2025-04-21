@@ -1,36 +1,26 @@
 # GrokPatcher v1.0
 # Target: example_script.py
-# FromVersion: 1.0
-# ToVersion: 1.1
+# FromVersion: 1.1
+# ToVersion: 1.2
 # InputFile: example_script.py
-# OutputFile: example_script_1.1.py
-# ArtifactID: f0a1b2c3-d4e5-6f7a-8b9c-0d1e2f3a4b5c
-
-[Section]
-Anchor: prompt
-AnchorType: artificial
-Action: replace
-Content:
-    # ARTIFICIAL ANCHOR: prompt
-    """
-    Generate changes using GrokPatcher as described in https://github.com/twinforces/groktools/docs/prompts/grokpatcher_prompt.md.
-    """
+# OutputFile: example_script_1.2.py
+# ArtifactID: a2b3c4d5-e6f7-8a9b-0c1d-2e3f4a5b6c7d
 
 [Section]
 Anchor: constants
 AnchorType: artificial
-Action: insert
+Action: replace
 Content:
     # ARTIFICIAL ANCHOR: constants
     # User: Script configuration constants.
     # grok: Define script version and configuration constants.
     # korg:
-    VERSION = "v1.1"
+    VERSION = "v1.2"
 
 [Section]
 Anchor: changelog
 AnchorType: artificial
-Action: insert
+Action: replace
 Content:
     # ARTIFICIAL ANCHOR: changelog
     """
@@ -41,18 +31,22 @@ Content:
     - Version 1.1: Initialized groktools suite with VERSION, Change Log, and grok: annotations.
       Artifact ID: f0a1b2c3-d4e5-6f7a-8b9c-0d1e2f3a4b5c
       Prompt: https://github.com/twinforces/groktools/docs/prompts/grokpatcher_prompt.md
+    - Version 1.2: Implemented data processing with regex.
+      Artifact ID: a2b3c4d5-e6f7-8a9b-0c1d-2e3f4a5b6c7d
+      Prompt: https://github.com/twinforces/groktools/docs/prompts/grokpatcher_prompt.md
     """
 
 [Section]
 Anchor: function_process_data
 AnchorType: natural
-Action: insert
+Action: replace
 Content:
     # User: Process input data for analysis.
     # fileref: data.txt
-    # grok: Parse input data using regex to extract fields, placeholder for parsing logic.
+    # grok: Parse input data using regex to extract fields, expecting pipe-separated values.
     # korg:
     def process_data(input_data):
-        # Placeholder for data parsing logic
-        pass
+        import re
+        fields = re.split(r'\|', input_data)
+        return fields
 !DONE!

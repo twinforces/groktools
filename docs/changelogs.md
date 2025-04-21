@@ -1,69 +1,30 @@
 changelogs (Version 1.0)
-Changelogs is a groktools component that ensures Python scripts maintain a Change Log section to record version changes, artifact IDs, and prompts, providing traceability for script evolution. It integrates with GrokPatcher, Versioning, Prompt Storage, and Restart tools. Tell Grok to read prompts/changelogs_prompt.md to use this feature, or https://github.com/twinforces/groktools/docs/prompts/groktools_meta_prompt.md to use all features.
+Changelogs is a groktools component that ensures Python scripts maintain a Change Log section to record version changes, artifact IDs, and prompts, providing traceability for script evolution. It integrates with Versioning, Prompt Storage, and Restart tools. Tell Grok to read prompts/changelogs_prompt.md to use this feature, or https://github.com/twinforces/groktools/docs/prompts/groktools_meta_prompt.md to use all features.
 Features
 
 Change Log Section: A section (e.g., # ARTIFICIAL ANCHOR: changelog) records version history.
 Content: Includes version number, change description, artifact ID, and prompt for each update.
-Incremental Updates: Appends new entries with each patch, preserving history.
-Integration: Works with GrokPatcher’s anchor-based patching system.
+Incremental Updates: Appends new entries with each change, preserving history.
 
 Changelogs Requirements
 
 Change Log Section: Include a Change Log section in the script, typically as a docstring or comment block.
 Content: Record version number, change description, artifact ID, and prompt (or prompt URL).
-Updates: Append new entries with each patch.
+Updates: Append new entries with each change.
 Placement: If no changelog section exists, insert one with an artificial anchor.
 
-Patch Format (via GrokPatcher)
-A GrokPatcher patch including a changelog:
-# GrokPatcher v1.0
-# Target: example_script.py
-# FromVersion: 1.0
-# ToVersion: 1.1
-# InputFile: example_script.py
-# OutputFile: example_script_1.1.py
-# ArtifactID: <UUID>
-
-[Section]
-Anchor: changelog
-AnchorType: artificial
-Action: insert
-Content:
-    # ARTIFICIAL ANCHOR: changelog
-    """
-    Change Log:
-    - Version 1.1: Added data parsing function.
-      Artifact ID: <UUID>
-      Prompt: https://github.com/twinforces/groktools/docs/prompts/grokpatcher_prompt.md
-    """
-!GO!
-
-
-Header Fields: As per GrokPatcher (see https://github.com/twinforces/groktools/docs/prompts/grokpatcher_prompt.md).
-Section Fields: Insert or update the Change Log section.
-Delimiters: !GO! for non-final sections, !NEXT! for new file patches, !DONE! for the final patch.
-
-Patch Generation Instructions
+Instructions for Maintaining Change Log
 The following instructions, hosted at https://github.com/twinforces/groktools/docs/prompts/changelogs_prompt.md, guide changelog maintenance:
 
 [Insert content from changelogs_prompt.md here, identical to above]
 
 Installation
 
-Save src/grokpatcher.py (GrokPatcher implementation).
 Save docs/changelogs.md (this documentation).
 Ensure https://github.com/twinforces/groktools/docs/prompts/changelogs_prompt.md is accessible.
-Ensure Python 3.6+ is installed.
-No external dependencies required.
 
 Usage
-Use GrokPatcher to apply patches that update the Change Log:
-python src/grokpatcher.py
-
-
-Paste patches as described in grokpatcher.md.
-Verify the Change Log in the script after patching.
-
+Apply changes to update the Change Log using GrokPatcher, as described in grokpatcher.md. Verify the Change Log in the script after applying changes.
 Contributing
 
 Fork the repository at https://github.com/twinforces/groktools.
