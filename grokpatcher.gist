@@ -1,0 +1,63 @@
+GrokPatcher Instructions
+Prompt: You are Grok 3, built by xAI. Generate patches to update Python scripts (ex: process_527_stats.py) using the GrokPatcher format (v1.0), as described below. Ensure patches address the script’s requirements and issues, as detailed in conversation history and provided files. Reference this Gist for patch generation instructions: https://gist.github.com/twinforces/f4747cd76b3de0727546ce8884dfe202.
+Patch Format
+A GrokPatcher patch is a text input ending with !GO! (non-final patches) or !DONE! (final patch):
+# GrokPatcher v1.0
+# Target: process_527_stats.py
+# FromVersion: 2.11
+# ToVersion: 2.11.1
+# InputFile: process_527_stats.py
+# OutputFile: process_527_stats_2.11.1.py
+# ArtifactID: <UUID>
+
+[Section]
+Anchor: function_debug_spurious_types
+AnchorType: natural
+Action: replace
+Content:
+    def debug_spurious_types(record_type, line, prev_line, next_line, input_file):
+        # Content with backticks escaped as \`
+!GO!
+
+
+Header Fields:
+Target: Script file to patch (process_527_stats.py).
+FromVersion, ToVersion: Version transition (e.g., 2.11 -> 2.11.1).
+InputFile, OutputFile: File paths for input and output.
+ArtifactID: Unique UUID for tracking.
+
+
+Section Fields:
+Anchor: Identifier for the code section (e.g., function name or custom anchor).
+AnchorType: natural (Python constructs like def, if, for, while) or artificial (comments like # ARTIFICIAL ANCHOR: prompt).
+Action: replace, insert, or delete.
+Content: New code, indented with 4 spaces, with backticks escaped as \.
+
+
+Delimiters:
+!GO!: Signals completion of non-final patches.
+!DONE!: Signals completion of the final patch, renaming the output to Target, logging "Patches complete", and terminating the patcher.
+
+
+
+Instructions for Generating Patches
+
+Use Natural Anchors: Target unique Python constructs (e.g., def function_name(...):, identified by regex like ^def\s+\w+\s*\(.*\):) for functions or major blocks (if, for, while). Ensure the anchor matches the exact construct to avoid ambiguity.
+Use Artificial Anchors: Insert unique comments (e.g., # ARTIFICIAL ANCHOR: prompt) for non-natural boundaries like script headers, imports, or constants.
+Ensure Anchor Uniqueness: All anchors (natural and artificial) must be unique within the script to prevent misapplication of patches.
+Escape Backticks: Use \ for backticks in Content to handle markdown rendering in CopyPasta.
+Incremental Versioning: Generate patches for sequential versions (e.g., 2.11 -> 2.11.1 -> 2.11.2 -> 2.11.3 -> 2.13).
+Self-Contained Patches: Target specific sections to avoid resource limits.
+Handle Script Issues: Address known issues like the eof error (AttributeError: '_io.TextIOWrapper' object has no attribute 'eof'), field count mismatches, and validation errors, as detailed in conversation history.
+Final Patch: End with !DONE! to rename the output to process_527_stats.py and terminate the patcher.
+
+Example Patch Sequence
+To update process_527_stats.py from 2.11 to 2.13:
+
+Patch 2.11 -> 2.11.1: Adds artificial anchors (!GO!).
+Patch 2.11.1 -> 2.11.2: Fixes eof error (!GO!).
+Patch 2.11.2 -> 2.11.3: Enhances debugging and field counts (!GO!).
+Patch 2.11.3 -> 2.13: Adds --strict-email, finalizes changes (!DONE!).
+
+Generate patches that align with the script’s requirements and adhere to this format.
+
