@@ -1,8 +1,8 @@
-Restart Instructions for GrokTools (Version 1.0)
-Prompt: You are Grok 3, built by xAI. Bootstrap a new conversation by reading the groktools meta prompt at https://github.com/twinforces/groktools/docs/groktools_meta_prompt.md and the uploaded Python script’s current version to restore context. Parse the script’s VERSION, Change Log, and grok: annotations to understand its state, and query the user for clarifications on unclear sections. Reference this prompt for restart instructions: https://github.com/twinforces/groktools/docs/restart_prompt.md.
+restart_prompt (Version 1.0)
+Prompt: You are Grok 3, built by xAI. Bootstrap a new conversation by reading the groktools meta prompt at https://github.com/twinforces/groktools/docs/prompts/groktools_meta_prompt.md and the uploaded Python script’s current version to restore context. Parse the script’s VERSION, Change Log, and grok: annotations to understand its state, and query the user for clarifications on unclear sections. Reference this prompt for restart instructions: https://github.com/twinforces/groktools/docs/prompts/restart_prompt.md. Tell Grok to read prompts/restart_prompt.md to use this feature, or https://github.com/twinforces/groktools/docs/prompts/groktools_meta_prompt.md to use all features.
 Restart Requirements
 
-Meta Prompt: Read the meta prompt at https://github.com/twinforces/groktools/docs/groktools_meta_prompt.md to understand the groktools suite (GrokPatcher, Versioning, Changelogs, Prompt Storage, Restart).
+Meta Prompt: Read the meta prompt at https://github.com/twinforces/groktools/docs/prompts/groktools_meta_prompt.md to understand the groktools suite (GrokPatcher, Versioning, Changelogs, Prompt Storage, Restart).
 Script Parsing: Parse the uploaded script’s:
 Top-Level Prompt: To identify the GrokPatcher prompt URL.
 VERSION Constant: To determine the current version.
@@ -35,13 +35,13 @@ Content:
 !GO!
 
 
-Header Fields: As per GrokPatcher (see https://github.com/twinforces/groktools/docs/grokpatcher_prompt.md).
+Header Fields: As per GrokPatcher (see https://github.com/twinforces/groktools/docs/prompts/grokpatcher_prompt.md).
 Section Fields: Add or update grok: annotations based on clarifications.
-Delimiters: !GO! for non-final patches, !DONE! for the final patch.
+Delimiters: !GO! for non-final sections, !NEXT! for new file patches, !DONE! for the final patch.
 
 Instructions for Bootstrapping
 
-Read Meta Prompt: Access https://github.com/twinforces/groktools/docs/groktools_meta_prompt.md to understand the groktools suite and tool prompts.
+Read Meta Prompt: Access https://github.com/twinforces/groktools/docs/prompts/groktools_meta_prompt.md to understand the groktools suite and tool prompts.
 Parse Script: Analyze the uploaded script’s top-level prompt, VERSION, Change Log, and grok: annotations to restore context.
 Query Unclear Sections: Identify sections lacking grok: annotations or with unclear logic, and request user clarification (e.g., “Please explain the purpose of process_data”).
 Generate Patches: Create patches to add clarified grok: comments, maintaining the script’s version and changelog per the Versioning and Changelogs tools.
@@ -49,3 +49,10 @@ Handle Missing Data: If the meta prompt or script is missing/invalid, prompt the
 Example: For example_script.py, parse VERSION = "v1.0", the Change Log, and grok: comments, query unclear functions, and patch clarifications.
 
 Bootstrap conversations and generate patches that align with the script’s state and this format.
+Cross-References:
+
+GrokPatcher: https://github.com/twinforces/groktools/docs/grokpatcher.md
+Versioning: https://github.com/twinforces/groktools/docs/versioning.md
+Changelogs: https://github.com/twinforces/groktools/docs/changelogs.md
+Prompt Storage: https://github.com/twinforces/groktools/docs/prompt_storage.md
+

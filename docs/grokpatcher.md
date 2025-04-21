@@ -1,9 +1,14 @@
-GrokPatcher: A Python Script Patching System
-GrokPatcher is a lightweight, continuous patching system for applying updates to Python scripts, designed to handle large files and avoid resource limits. It uses natural and artificial anchors to target code sections, with !GO! and !DONE! delimiters for seamless patch input. Part of the groktools suite, it integrates with Versioning, Changelogs, Prompt Storage, and Restart tools for robust script maintenance.
+grokpatcher (Version 1.0)
+GrokPatcher is a lightweight, continuous patching system for applying updates to Python scripts, designed to handle large files and avoid resource limits. It uses natural and artificial anchors to target code sections, with !GO!, !NEXT!, and !DONE! delimiters for seamless patch input. Part of the groktools suite, it integrates with Versioning, Changelogs, Prompt Storage, and Restart tools for robust script maintenance. Tell Grok to read prompts/grokpatcher_prompt.md to use this feature, or https://github.com/twinforces/groktools/docs/prompts/groktools_meta_prompt.md to use all features.
 Features
 
 Continuous Operation: Runs as a service, accepting patches via stdin until !DONE! terminates it.
-Patch Delimiters: Non-final patches end with !GO!; the final patch ends with !DONE!, logging "Patches complete" and exiting.
+Patch Delimiters:
+!GO!: Completes a patch section for the current file.
+!NEXT!: Writes the current output file and starts a new patch for another file.
+!DONE!: Completes the final patch, renaming the output, and exits.
+
+
 Logging: Logs "Applying patch:  -> " for each patch.
 Natural and Artificial Anchors:
 Natural: Python constructs like def, if, for, while, identified by regex (e.g., ^def\s+\w+\s*\(.*\):). Must be unique within the script.
@@ -15,7 +20,7 @@ Markdown Compatibility: Escapes backticks () as ` in patches, de-escaped during 
 Self-Contained Patches: Specify input/output files and actions (replace, insert, delete).
 
 Patch Format
-A GrokPatcher patch is a text input ending with !GO! or !DONE!:
+A GrokPatcher patch is a text input ending with !GO!, !NEXT!, or !DONE!:
 # GrokPatcher v1.0
 # Target: example_script.py
 # FromVersion: 1.0
@@ -33,6 +38,32 @@ Content:
         # Content with backticks escaped as \`
 !GO!
 
+[Section]
+Anchor: constants
+AnchorType: artificial
+Action: insert
+Content:
+    # ARTIFICIAL ANCHOR: constants
+    VERSION = "v1.1"
+!NEXT!
+
+# GrokPatcher v1.0
+# Target: another_script.py
+# FromVersion: 2.0
+# ToVersion: 2.1
+# InputFile: another_script.py
+# OutputFile: another_script_2.1.py
+# ArtifactID: <UUID>
+
+[Section]
+Anchor: main
+AnchorType: natural
+Action: replace
+Content:
+    def main():
+        # Updated main logic
+!DONE!
+
 
 Header Fields:
 Target: Script file to patch.
@@ -49,34 +80,35 @@ Content: New code, indented with 4 spaces, backticks escaped.
 
 
 Delimiters:
-!GO!: Ends non-final patches.
-!DONE!: Ends the final patch, logging "Patches complete", renaming the output, and terminating.
+!GO!: Ends a patch section for the current file.
+!NEXT!: Writes the output file and starts a new patch.
+!DONE!: Writes, renames, and terminates.
 
 
 
 Patch Generation Instructions
-The following instructions, hosted at https://github.com/twinforces/groktools/docs/grokpatcher_prompt.md, guide patch generation:
+The following instructions, hosted at https://github.com/twinforces/groktools/docs/prompts/grokpatcher_prompt.md, guide patch generation:
 
 [Insert content from grokpatcher_prompt.md here, identical to above]
 
 Installation
 
-Save grokpatcher.py (implementation).
-Save GROKPATCHER.md (this documentation).
-Ensure https://github.com/twinforces/groktools/docs/grokpatcher_prompt.md is accessible.
+Save src/grokpatcher.py (implementation).
+Save docs/grokpatcher.md (this documentation).
+Ensure https://github.com/twinforces/groktools/docs/prompts/grokpatcher_prompt.md is accessible.
 Ensure Python 3.6+ is installed.
 No external dependencies required.
 
 Usage
 Run GrokPatcher as a continuous service:
-python grokpatcher.py
+python src/grokpatcher.py
 
 
-Paste patches, each ending with !GO! or !DONE! for the final patch.
-Example (macOS):pbpaste < patch_file.grokpatch
+Paste patches, ending with !GO!, !NEXT!, or !DONE!.
+Example (macOS):pbpaste < examples/patch_example_1.0_to_1.1.grokpatch
 
 
-Continue pasting until !DONE! is received, which logs "Patches complete" and exits.
+Continue until !DONE! logs "Patches complete" and exits.
 
 Contributing
 
@@ -86,3 +118,10 @@ Report issues via GitHub Issues.
 
 License
 MIT License. See https://github.com/twinforces/groktools/LICENSE for details.
+Cross-References:
+
+Versioning: https://github.com/twinforces/groktools/docs/versioning.md
+Changelogs: https://github.com/twinforces/groktools/docs/changelogs.md
+Prompt Storage: https://github.com/twinforces/groktools/docs/prompt_storage.md
+Restart: https://github.com/twinforces/groktools/docs/restart.md
+

@@ -1,54 +1,77 @@
+restart (Version 1.0)
+Restart is a groktools component that bootstraps new conversations by reading the groktools meta prompt and an uploaded Python script’s current version, parsing its VERSION, Change Log, and grok: annotations to restore context. It integrates with GrokPatcher, Versioning, Changelogs, and Prompt Storage. Tell Grok to read prompts/restart_prompt.md to use this feature, or https://github.com/twinforces/groktools/docs/prompts/groktools_meta_prompt.md to use all features.
+Features
+
+Meta Prompt: Reads the meta prompt to understand the groktools suite.
+Script Parsing: Analyzes the script’s top-level prompt, VERSION, Change Log, and grok: annotations.
+Clarification Process: Queries unclear sections and patches clarifications as grok: comments.
+Context Restoration: Bootstraps conversations based on the script’s state.
+
+Restart Requirements
+
+Meta Prompt: Access https://github.com/twinforces/groktools/docs/prompts/groktools_meta_prompt.md.
+Script Parsing: Parse the script’s top-level prompt, VERSION, Change Log, and grok: annotations.
+Clarification Process: Identify and query unclear sections, patching clarifications as grok: comments.
+Context Restoration: Align with the script’s version and annotations.
+
+Patch Format (via GrokPatcher)
+A GrokPatcher patch for restart-related updates:
 # GrokPatcher v1.0
 # Target: example_script.py
 # FromVersion: 1.0
 # ToVersion: 1.1
 # InputFile: example_script.py
 # OutputFile: example_script_1.1.py
-# ArtifactID: f0a1b2c3-d4e5-6f7a-8b9c-0d1e2f3a4b5c
-
-[Section]
-Anchor: prompt
-AnchorType: artificial
-Action: replace
-Content:
-    # ARTIFICIAL ANCHOR: prompt
-    """
-    Generate changes using GrokPatcher as described in https://github.com/twinforces/groktools/docs/grokpatcher_prompt.md.
-    """
-
-[Section]
-Anchor: constants
-AnchorType: artificial
-Action: insert
-Content:
-    # ARTIFICIAL ANCHOR: constants
-    # User: Script configuration constants.
-    # grok: Define script version and configuration constants.
-    # korg:
-    VERSION = "v1.1"
-
-[Section]
-Anchor: changelog
-AnchorType: artificial
-Action: insert
-Content:
-    # ARTIFICIAL ANCHOR: changelog
-    """
-    Change Log:
-    - Version 1.1: Initialized groktools suite with VERSION, Change Log, and grok: annotations.
-      Artifact ID: f0a1b2c3-d4e5-6f7a-8b9c-0d1e2f3a4b5c
-      Prompt: https://github.com/twinforces/groktools/docs/grokpatcher_prompt.md
-    """
+# ArtifactID: <UUID>
 
 [Section]
 Anchor: function_process_data
 AnchorType: natural
-Action: insert
+Action: replace
 Content:
-    # User: Process input data for analysis.
-    # grok: Parse input data using regex to extract fields, placeholder for parsing logic.
+    # grok: Parse input data using regex to extract fields, clarified per user input.
     # korg:
     def process_data(input_data):
-        # Placeholder for data parsing logic
-        pass
-!DONE!
+        # Content with backticks escaped as \`
+!GO!
+
+
+Header Fields: As per GrokPatcher (see https://github.com/twinforces/groktools/docs/prompts/grokpatcher_prompt.md).
+Section Fields: Add or update grok: annotations based on clarifications.
+Delimiters: !GO! for non-final sections, !NEXT! for new file patches, !DONE! for the final patch.
+
+Bootstrapping Instructions
+The following instructions, hosted at https://github.com/twinforces/groktools/docs/prompts/restart_prompt.md, guide context restoration:
+
+[Insert content from restart_prompt.md here, identical to above]
+
+Installation
+
+Save src/grokpatcher.py (GrokPatcher implementation).
+Save docs/restart.md (this documentation).
+Ensure https://github.com/twinforces/groktools/docs/prompts/restart_prompt.md is accessible.
+Ensure Python 3.6+ is installed.
+No external dependencies required.
+
+Usage
+Bootstrap a conversation by uploading the script and referencing the meta prompt:
+
+Upload the script to Grok (e.g., paste text or upload a file).
+Specify the meta prompt URL: https://github.com/twinforces/groktools/docs/prompts/groktools_meta_prompt.md.
+Grok parses the script and queries unclear sections, generating patches as needed.
+
+Contributing
+
+Fork the repository at https://github.com/twinforces/groktools.
+Submit pull requests with new features or bug fixes.
+Report issues via GitHub Issues.
+
+License
+MIT License. See https://github.com/twinforces/groktools/LICENSE for details.
+Cross-References:
+
+GrokPatcher: https://github.com/twinforces/groktools/docs/grokpatcher.md
+Versioning: https://github.com/twinforces/groktools/docs/versioning.md
+Changelogs: https://github.com/twinforces/groktools/docs/changelogs.md
+Prompt Storage: https://github.com/twinforces/groktools/docs/prompt_storage.md
+

@@ -13,7 +13,7 @@ Action: replace
 Content:
     # ARTIFICIAL ANCHOR: prompt
     """
-    Generate changes using GrokPatcher as described in https://github.com/twinforces/groktools/docs/grokpatcher_prompt.md.
+    Generate changes using GrokPatcher as described in https://github.com/twinforces/groktools/docs/prompts/grokpatcher_prompt.md.
     """
 
 [Section]
@@ -37,7 +37,7 @@ Content:
     Change Log:
     - Version 1.1: Initialized groktools suite with VERSION, Change Log, and grok: annotations.
       Artifact ID: f0a1b2c3-d4e5-6f7a-8b9c-0d1e2f3a4b5c
-      Prompt: https://github.com/twinforces/groktools/docs/grokpatcher_prompt.md
+      Prompt: https://github.com/twinforces/groktools/docs/prompts/grokpatcher_prompt.md
     """
 
 [Section]
@@ -50,5 +50,26 @@ Content:
     # korg:
     def process_data(input_data):
         # Placeholder for data parsing logic
+        pass
+!NEXT!
+
+# GrokPatcher v1.0
+# Target: another_script.py
+# FromVersion: 2.0
+# ToVersion: 2.1
+# InputFile: another_script.py
+# OutputFile: another_script_2.1.py
+# ArtifactID: a1b2c3d4-e5f6-7a8b-9c0d-1e2f3a4b5c6d
+
+[Section]
+Anchor: main
+AnchorType: natural
+Action: replace
+Content:
+    # User: Main entry point for the script.
+    # grok: Execute primary script logic, updated for new feature.
+    # korg:
+    def main():
+        # Placeholder for updated main logic
         pass
 !DONE!

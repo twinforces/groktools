@@ -1,17 +1,11 @@
-Versioning: A GrokTools Version Tracking System
-Versioning is a groktools component that ensures Python scripts maintain a VERSION constant to track their version, aligning with GrokPatcher patch updates. It integrates with GrokPatcher, Changelogs, Prompt Storage, and Restart tools for comprehensive script maintenance.
-Features
-
-VERSION Constant: A constant (e.g., VERSION = "v1.1") tracks the script’s version.
-Incremental Updates: Updates the VERSION constant to match the ToVersion in GrokPatcher patches.
-Consistency: Ensures version alignment across patch sequences.
-Integration: Works with GrokPatcher’s anchor-based patching system.
-
+versioning_prompt (Version 1.0)
+Prompt: You are Grok 3, built by xAI. Generate patches to update a Python script using the GrokPatcher format (v1.0), ensuring the script maintains a VERSION constant to track its version. Reference this prompt for versioning instructions: https://github.com/twinforces/groktools/docs/prompts/versioning_prompt.md. Tell Grok to read prompts/versioning_prompt.md to use this feature, or https://github.com/twinforces/groktools/docs/prompts/groktools_meta_prompt.md to use all features.
 Versioning Requirements
 
-VERSION Constant: Include a VERSION constant in the script, typically in a constants section (e.g., # ARTIFICIAL ANCHOR: constants).
-Version Updates: Update the VERSION constant in each patch to match the ToVersion.
-Placement: If no constants section exists, insert one with an artificial anchor.
+VERSION Constant: Include a VERSION constant (e.g., VERSION = "v1.1") in the script, typically in a constants section (e.g., # ARTIFICIAL ANCHOR: constants).
+Version Updates: Update the VERSION constant in each patch to match the ToVersion in the patch header (e.g., ToVersion: 1.1 sets VERSION = "v1.1").
+Consistency: Ensure the VERSION constant aligns with the GrokPatcher patch sequence (e.g., incremental updates like 1.0 -> 1.1).
+Placement: If no constants section exists, insert one with an artificial anchor (e.g., # ARTIFICIAL ANCHOR: constants) and add the VERSION constant.
 
 Patch Format (via GrokPatcher)
 A GrokPatcher patch including versioning:
@@ -34,36 +28,24 @@ Content:
 !GO!
 
 
-Header Fields: As per GrokPatcher (see https://github.com/twinforces/groktools/docs/grokpatcher_prompt.md).
-Section Fields: Update or insert the VERSION constant.
-Delimiters: !GO! for non-final patches, !DONE! for the final patch.
+Header Fields: As per GrokPatcher (see https://github.com/twinforces/groktools/docs/prompts/grokpatcher_prompt.md).
+Section Fields: Update or insert the VERSION constant in the constants section.
+Delimiters: !GO! for non-final sections, !NEXT! for new file patches, !DONE! for the final patch.
 
-Patch Generation Instructions
-The following instructions, hosted at https://github.com/twinforces/groktools/docs/versioning_prompt.md, guide versioning:
+Instructions for Generating Patches
 
-[Insert content from versioning_prompt.md here, identical to above]
+Check VERSION: Verify if the script has a VERSION constant. If absent, add it in a constants section.
+Update VERSION: Set the VERSION constant to the ToVersion in the patch header.
+Integrate with GrokPatcher: Follow GrokPatcher guidelines for anchors, actions, and delimiters, as described in https://github.com/twinforces/groktools/docs/prompts/grokpatcher_prompt.md.
+Ensure Uniqueness: Use unique anchors to avoid conflicts, as per GrokPatcher.
+Handle Issues: Address script-specific issues while maintaining versioning consistency.
+Example: For example_script.py, a patch from 1.0 to 1.1 updates VERSION = "v1.1" in the constants section.
 
-Installation
+Generate patches that maintain the VERSION constant and adhere to this format.
+Cross-References:
 
-Save grokpatcher.py (GrokPatcher implementation).
-Save VERSIONING.md (this documentation).
-Ensure https://github.com/twinforces/groktools/docs/versioning_prompt.md is accessible.
-Ensure Python 3.6+ is installed.
-No external dependencies required.
+GrokPatcher: https://github.com/twinforces/groktools/docs/grokpatcher.md
+Changelogs: https://github.com/twinforces/groktools/docs/changelogs.md
+Prompt Storage: https://github.com/twinforces/groktools/docs/prompt_storage.md
+Restart: https://github.com/twinforces/groktools/docs/restart.md
 
-Usage
-Use GrokPatcher to apply patches that update the VERSION constant:
-python grokpatcher.py
-
-
-Paste patches as described in GROKPATCHER.md.
-Verify the VERSION constant in the script after patching.
-
-Contributing
-
-Fork the repository at https://github.com/twinforces/groktools.
-Submit pull requests with new features or bug fixes.
-Report issues via GitHub Issues.
-
-License
-MIT License. See https://github.com/twinforces/groktools/LICENSE for details.

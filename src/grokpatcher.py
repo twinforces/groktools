@@ -13,7 +13,7 @@ def parse_grokpatcher_patch(patch_content):
     lines = patch_content.splitlines()
     for line in lines:
         line = line.strip()
-        if not line or line in ["!GO!", "!DONE!"]:
+        if not line or line in ["!GO!", "!NEXT!", "!DONE!"]:
             continue
         if line.startswith("# GrokPatcher v1.0"):
             continue
@@ -93,7 +93,7 @@ def apply_patch(input_file, patches, output_file, anchor_type, target_file):
 
 def main():
     """Run GrokPatcher as a continuous service."""
-    print("GrokPatcher v1.0 started. Paste patches (end with '!GO!' or '!DONE!' for final patch).")
+    print("GrokPatcher v1.0 started. Paste patches (end with '!GO!', '!NEXT!', or '!DONE!').")
     
     patch_content = ""
     while True:
@@ -103,7 +103,7 @@ def main():
                 print("Unexpected EOF. Exiting.", file=sys.stderr)
                 break
             line = line.rstrip('\n')
-            if line.strip() in ["!GO!", "!DONE!"]:
+            if line.strip() in ["!GO!", "!NEXT!", "!DONE!"]:
                 if patch_content.strip():
                     header, patches = parse_grokpatcher_patch(patch_content)
                     print(f"Applying patch: {header['FromVersion']} -> {header['ToVersion']}")
@@ -112,6 +112,7 @@ def main():
                     output_file = header["OutputFile"]
                     target_file = header["Target"]
                     is_final_patch = line.strip() == "!DONE!"
+                    is_next_patch = line.strip() == "!NEXT!"
                     
                     if not os.path.exists(input_file):
                         print(f"Error: Input file {input_file} does not exist", file=sys.stderr)
@@ -123,8 +124,11 @@ def main():
                         os.rename(output_file, target_file)
                         print(f"Patches complete. Renamed {output_file} to {target_file}. Terminating.")
                         break
-                    
-                    patch_content = ""  # Reset for next patch
+                    elif is_next_patch:
+                        print(f"Completed patch for {output_file}. Ready for next patch.")
+                        patch_content = ""  # Reset for next patch
+                    else:  # !GO!
+                        patch_content = ""  # Reset for next section
                 continue
             patch_content += line + "\n"
         

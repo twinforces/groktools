@@ -1,7 +1,7 @@
-GrokPatcher Instructions (Version 1.0)
-Prompt: You are Grok 3, built by xAI. Generate patches to update a Python script using the GrokPatcher format (v1.0), as described below. Ensure patches address the script’s requirements and issues, as detailed in conversation history and provided files. Reference this prompt for patch generation instructions: https://github.com/twinforces/groktools/docs/grokpatcher_prompt.md.
+grokpatcher_prompt (Version 1.0)
+Prompt: You are Grok 3, built by xAI. Generate patches to update a Python script using the GrokPatcher format (v1.0), as described below. Ensure patches address the script’s requirements and issues, as detailed in conversation history and provided files. Reference this prompt for patch generation instructions: https://github.com/twinforces/groktools/docs/prompts/grokpatcher_prompt.md. Tell Grok to read prompts/grokpatcher_prompt.md to use this feature, or https://github.com/twinforces/groktools/docs/prompts/groktools_meta_prompt.md to use all features.
 Patch Format
-A GrokPatcher patch is a text input ending with !GO! (non-final patches) or !DONE! (final patch):
+A GrokPatcher patch is a text input ending with !GO! (non-final section), !NEXT! (new file patch), or !DONE! (final patch):
 # GrokPatcher v1.0
 # Target: example_script.py
 # FromVersion: 1.0
@@ -19,6 +19,32 @@ Content:
         # Content with backticks escaped as \`
 !GO!
 
+[Section]
+Anchor: constants
+AnchorType: artificial
+Action: insert
+Content:
+    # ARTIFICIAL ANCHOR: constants
+    VERSION = "v1.1"
+!NEXT!
+
+# GrokPatcher v1.0
+# Target: another_script.py
+# FromVersion: 2.0
+# ToVersion: 2.1
+# InputFile: another_script.py
+# OutputFile: another_script_2.1.py
+# ArtifactID: <UUID>
+
+[Section]
+Anchor: main
+AnchorType: natural
+Action: replace
+Content:
+    def main():
+        # Updated main logic
+!DONE!
+
 
 Header Fields:
 Target: Script file to patch (e.g., example_script.py).
@@ -35,8 +61,9 @@ Content: New code, indented with 4 spaces, with backticks escaped as \.
 
 
 Delimiters:
-!GO!: Signals completion of non-final patches.
-!DONE!: Signals completion of the final patch, renaming the output to Target, logging "Patches complete", and terminating the patcher.
+!GO!: Signals completion of a patch section for the current file, continuing to accept more sections.
+!NEXT!: Writes the current output file and prepares for a new patch for a different file, without terminating the patcher.
+!DONE!: Signals completion of the final patch, writing and renaming the output to Target, logging "Patches complete", and terminating the patcher.
 
 
 
@@ -49,22 +76,29 @@ Escape Backticks: Use \ for backticks in Content to handle markdown rendering in
 Incremental Versioning: Generate patches for sequential versions (e.g., 1.0 -> 1.1). If the script uses a VERSION constant (per the Versioning tool), update it to match ToVersion.
 Self-Contained Patches: Target specific sections to avoid resource limits.
 Handle Issues: Address script-specific issues (e.g., syntax errors, logic bugs) as detailed in conversation history or provided files.
-Final Patch: End with !DONE! to rename the output to the Target file and terminate the patcher.
+Multiple Files: Use !NEXT! to switch between files in a single patching session, ensuring each file’s patches are self-contained.
+Final Patch: End with !DONE! to rename the final output to the Target file and terminate the patcher.
 
 Integration with Other Tools
 GrokPatcher serves as the patching engine for the groktools suite, supporting:
 
-Versioning: Updates the VERSION constant in the constants section (see https://github.com/twinforces/groktools/docs/versioning_prompt.md).
-Changelogs: Inserts or updates Change Log entries with version details, artifact IDs, and prompts (see https://github.com/twinforces/groktools/docs/changelogs_prompt.md).
-Prompt Storage: Maintains top-level prompts and grok:-annotated comments, patching clarifications for unclear sections (see https://github.com/twinforces/groktools/docs/prompt_storage_prompt.md).
-Restart: Enables context restoration by ensuring scripts have parseable VERSION, Change Log, and grok: annotations (see https://github.com/twinforces/groktools/docs/restart_prompt.md).
+Versioning: Updates the VERSION constant in the constants section (see https://github.com/twinforces/groktools/docs/prompts/versioning_prompt.md).
+Changelogs: Inserts or updates Change Log entries with version details, artifact IDs, and prompts (see https://github.com/twinforces/groktools/docs/prompts/changelogs_prompt.md).
+Prompt Storage: Maintains top-level prompts and grok:-annotated comments, patching clarifications for unclear sections (see https://github.com/twinforces/groktools/docs/prompts/prompt_storage_prompt.md).
+Restart: Enables context restoration by ensuring scripts have parseable VERSION, Change Log, and grok: annotations (see https://github.com/twinforces/groktools/docs/prompts/restart_prompt.md).
 
 Ensure patches align with these tools’ requirements when applicable.
 Example Patch Sequence
-For a script example_script.py:
+For scripts example_script.py and another_script.py:
 
-Patch 1.0 -> 1.1: Adds artificial anchors (!GO!).
-Patch 1.1 -> 1.2: Fixes a parsing error (!GO!).
-Patch 1.2 -> 1.3: Enhances functionality (!DONE!).
+Patch example_script.py 1.0 -> 1.1: Adds artificial anchors and VERSION (!GO!, !NEXT!).
+Patch another_script.py 2.0 -> 2.1: Updates main function (!DONE!).
 
 Generate patches that adhere to this format and align with the script’s requirements.
+Cross-References:
+
+Versioning: https://github.com/twinforces/groktools/docs/versioning.md
+Changelogs: https://github.com/twinforces/groktools/docs/changelogs.md
+Prompt Storage: https://github.com/twinforces/groktools/docs/prompt_storage.md
+Restart: https://github.com/twinforces/groktools/docs/restart.md
+
