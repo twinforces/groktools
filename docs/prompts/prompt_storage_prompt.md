@@ -17,7 +17,7 @@ Identify Unclear Sections: Flag sections lacking clear purpose or documentation 
 Patch Clarifications: Incorporate user clarifications as # grok: comments in the relevant sections.
 Ensure Uniqueness: Use unique anchors for the prompt section to avoid conflicts (e.g., # ARTIFICIAL ANCHOR: prompt).
 Example: For a script, add a top-level prompt and # grok: comments, querying unclear functions and patching clarifications, with a # fileref: for sections tied to external files.
-Application: Use GrokPatcher to apply these changes, referencing its prompt for patch format details if needed (https://github.com/twinforces/groktools/docs/prompts/grokpatcher_prompt.md).
+Insights: Take special note of prompts offered as an insight or hint as this is the human collaborating with you with real world experience.
 
 Maintain the top-level prompt and grok: annotations to ensure script clarity and context restoration.
 Cross-References:
