@@ -1,7 +1,7 @@
 grokpatcher (Version 1.0)
 GrokPatcher is a lightweight, continuous patching system for applying updates to Python scripts, designed to handle large files and avoid resource limits. It uses natural and artificial anchors to target code sections, with !GO!, !NEXT!, and !DONE! delimiters for seamless patch input. Part of the groktools suite, it integrates with Versioning, Changelogs, Prompt Storage, and Restart tools for robust script maintenance. Tell Grok to read prompts/grokpatcher_prompt.md to use this feature, or https://github.com/twinforces/groktools/docs/prompts/groktools_meta_prompt.md to use all features.
 
-Why: Grok has limits on responses which causes large scripts to be truncated. It tries to ameliorate this by producing partial diffs, but it can be tedious to track "...rest remains the same..." when its buried in a script. Hence, automation!
+Why: Grok has limits on responses which causes large scripts to be truncated. It tries to ameliorate this by producing partial diffs, but it can be tedious to track "...rest remains the same..." when its buried in a script. Hence, automation! `patch` would be better, but grok can't produce a proper diff -u result for more than one change at a time. 
 
 Features
 
@@ -104,14 +104,19 @@ No external dependencies required.
 
 Usage
 Run GrokPatcher as a continuous service:
-python src/grokpatcher.py
+python src/grokpatcher.py 
+when you have a set of patches to apply.
 
 
-Paste patches, ending with !GO!, !NEXT!, or !DONE!.
-Example (macOS):pbpaste < examples/patch_example_1.0_to_1.1.grokpatch
+Paste patches, ending with !GO!, !NEXT!, or !DONE! to grokpatcher window.
+Example (macOS):pbpaste < examples/patch_example_1.0_to_1.1.grokpatch or click the copy icon in the display box in grok, then paste in the terminal. 
 
 
 Continue until !DONE! logs "Patches complete" and exits.
+
+Limitations
+
+This doesn't do any kind of checksum or SHA on the result, because when experimenting, grok seemed unable to compute one reliably. 
 
 Contributing
 
