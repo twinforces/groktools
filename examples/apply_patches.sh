@@ -6,8 +6,11 @@
 set -e
 
 # Constants
-GROKPATCHER="../src/grokpatcher.py"
-LOG_FILE="apply_patches.log"
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+PROJECT_ROOT="$(dirname "$SCRIPT_DIR")"
+GROKPATCHER="$PROJECT_ROOT/src/grokpatcher.py"
+DIFFEXTRACT="$PROJECT_ROOT/src/diffextract.py"
+LOG_FILE="$SCRIPT_DIR/apply_patches.log"
 NORMALIZE_UNICODE=0  # Set to 1 to normalize Unicode (e.g., convert ’ to ')
 
 # Ensure prerequisites
@@ -23,8 +26,8 @@ if [ ! -f "$GROKPATCHER" ]; then
     echo "Error: grokpatcher.py not found at $GROKPATCHER" >&2
     exit 1
 fi
-if [ ! -f "../src/diffextract.py" ]; then
-    echo "Error: diffextract.py not found at ../src/diffextract.py" >&2
+if [ ! -f "$DIFFEXTRACT" ]; then
+    echo "Error: diffextract.py not found at $DIFFEXTRACT" >&2
     exit 1
 fi
 
@@ -58,14 +61,14 @@ apply_patch() {
 # Apply sample patches
 PATCHES=("patch1.grokpatch" "patch2.grokpatch" "patchtest/second_coming_patch.grokpatch" "patchtest/henry_v_patch.grokpatch")
 for patch in "${PATCHES[@]}"; do
-    # Check both examples/patchtest/ and patchtest/
-    if [ -f "examples/$patch" ]; then
-        apply_patch "examples/$patch"
-    elif [ -f "$patch" ]; then
-        apply_patch "$patch"
+    # Check both examples/ and project root for patchtest/
+    if [ -f "$SCRIPT_DIR/$patch" ]; then
+        apply_patch "$SCRIPT_DIR/$patch"
+    elif [ -f "$PROJECT_ROOT/$patch" ]; then
+        apply_patch "$PROJECT_ROOT/$patch"
     else
-        echo "$(date): Warning: $patch not found in examples/ or root, skipping" >&3
-        echo "$(date): Warning: $patch not found in examples/ or root, skipping"
+        echo "$(date): Warning: $patch not found in $SCRIPT_DIR/ or $PROJECT_ROOT/, skipping" >&3
+        echo "$(date): Warning: $patch not found in $SCRIPT_DIR/ or $PROJECT_ROOT/, skipping"
     fi
 done
 
