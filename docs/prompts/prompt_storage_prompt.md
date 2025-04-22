@@ -1,29 +1,66 @@
-prompt_storage_prompt (Version 1.0)
-Prompt: You are Grok 3, built by xAI. Maintain a top-level prompt and grok:-annotated comments in a Python script to document its purpose and functionality, querying the user for clarifications on unclear sections and patching them back as grok: comments. If a section references an external file, include a fileref: comment and request the file during context restoration. Reference this prompt for prompt storage instructions: https://github.com/twinforces/groktools/docs/prompts/prompt_storage_prompt.md. Tell Grok to read prompts/prompt_storage_prompt.md to use this feature, or https://github.com/twinforces/groktools/docs/prompts/groktools_meta_prompt.md to use all features.
-Prompt Storage Requirements
+Prompt Storage Prompt
+Base URL: https://github.com/twinforces/groktools/raw/refs/heads/master/
+This prompt directs Grok to embed grok:-annotated comments in Python scripts for groktools projects to store prompts for regenerating source code blocks and restoring context, as a Grok-side tool prompt in the Grok programming language.
+Instructions
 
-Top-Level Prompt: Include a docstring at the script’s top, referencing the appropriate prompt for applying changes (e.g., """Generate changes using GrokPatcher as described in https://github.com/twinforces/groktools/docs/prompts/grokpatcher_prompt.md.""").
-grok: Annotations: Add comments prefixed with # grok: before major functions, complex blocks, or unclear logic to explain their purpose (e.g., # grok: Parse input data using regex). Multiline annotations terminate with # korg:. Users may prepend their own descriptions, with grok: content for Grok.
-fileref: References: If a section is generated based on an external file, include a # fileref: <filename> comment (e.g., # fileref: data.txt). During context restoration, request the user to upload the referenced file.
-Clarification Process: Identify unclear script sections (e.g., uncommented functions, ambiguous logic), query the user for explanations, and patch clarified comments back with # grok: prefixes.
-Updates: Maintain and expand annotations with each change, ensuring they remain accurate and informative, providing clarity for a 3am, sleep-deprived coder.
+Add Single-Line Annotations:
 
-Instructions for Maintaining Prompt Storage
+Use grok: to store concise prompts or user-provided Insights for regenerating the associated code block.
 
-Check Top-Level Prompt: Verify the script has a top-level prompt. If absent, add it with an artificial anchor (e.g., # ARTIFICIAL ANCHOR: prompt).
-Add grok: Annotations: Insert # grok: comments before major functions, complex blocks, or unclear sections to explain their purpose, using # korg: for multiline termination. Allow user descriptions before grok: content, which is for Grok. Update existing annotations as needed.
-Add fileref: References: If a section is generated based on an external file (e.g., data.txt), include a # fileref: data.txt comment. During context restoration, request the user to upload the file.
-Identify Unclear Sections: Flag sections lacking clear purpose or documentation (e.g., uncommented functions). Request user clarification, specifying the section (e.g., “Please explain the purpose of process_data”).
-Patch Clarifications: Incorporate user clarifications as # grok: comments in the relevant sections.
-Ensure Uniqueness: Use unique anchors for the prompt section to avoid conflicts (e.g., # ARTIFICIAL ANCHOR: prompt).
-Example: For a script, add a top-level prompt and # grok: comments, querying unclear functions and patching clarifications, with a # fileref: for sections tied to external files.
-Insights: Take special note of prompts offered as an insight or hint as this is the human collaborating with you with real world experience.
+Example:
+# grok: Process dataset with pandas, group by category
+import pandas as pd
 
-Maintain the top-level prompt and grok: annotations to ensure script clarity and context restoration.
-Cross-References:
 
-GrokPatcher: https://github.com/twinforces/groktools/docs/grokpatcher.md
-Versioning: https://github.com/twinforces/groktools/docs/versioning.md
-Changelogs: https://github.com/twinforces/groktools/docs/changelogs.md
-Restart: https://github.com/twinforces/groktools/docs/restart.md
+
+
+Add Multi-Line Annotations:
+
+Use grok: <multi-line prompt> :krog to store detailed prompts or Insights for regenerating complex code blocks.
+
+Example:
+# grok: Analyze dataset and save output :krog
+# Group by category, compute aggregates
+# Save results as CSV
+# :krog
+df = pd.read_csv('data.csv')
+
+
+
+
+Use fileref::
+
+Reference external files with fileref: to provide context for regeneration.
+
+Prompt user to upload the file if not in the workspace.
+
+Example:
+# grok: fileref: docs/dataset_schema.md
+# Prompt: Please upload dataset_schema.md if not in workspace
+
+
+
+
+Include Insights:
+
+Embed user-provided Insights (e.g., instructions, context) in annotations to guide regeneration.
+
+
+Quality Check:
+
+Compare generated code with existing code.
+Embed the prompt used for generation in the annotation.
+If differences are detected, prompt user: “Generated code differs from existing code. Please clarify intended changes or confirm update.”
+
+
+Ensure Consistency:
+
+Format annotations clearly and consistently.
+
+
+
+Notes
+
+Annotations enable context restoration via docs/prompts/restart_prompt.md, a Grok-side tool prompt.
+For human-readable details, see docs/prompt_storage.md.
 

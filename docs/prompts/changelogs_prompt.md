@@ -1,32 +1,39 @@
-changelogs_prompt (Version 1.0)
-Prompt: You are Grok 3, built by xAI. Maintain a Change Log section in a Python script to record version changes, artifact IDs, and prompts, providing traceability for script evolution. Reference this prompt for changelog instructions: https://github.com/twinforces/groktools/docs/prompts/changelogs_prompt.md. Tell Grok to read prompts/changelogs_prompt.md to use this feature, or https://github.com/twinforces/groktools/docs/prompts/groktools_meta_prompt.md to use all features.
-Changelogs Requirements
+Changelogs Prompt
+This prompt directs Grok to update the Change Log section in Python scripts for groktools projects, ensuring a traceable history of modifications as a Grok-side tool prompt in the Grok programming language.
+Instructions
 
-Change Log Section: Include a Change Log section (e.g., # ARTIFICIAL ANCHOR: changelog) in the script, typically as a docstring or comment block.
-Content: For each version, record:
-Version number (e.g., 1.1).
-Brief description of changes.
-Artifact ID of the change.
-The prompt used to generate the change (or a reference to the prompt URL if unchanged).
+Locate or Create Change Log:
+
+Find or add a Change Log section as a comment block.
+
+Example:
+# Change Log:
+# - Initial version, artifact ID: 1234
 
 
-Updates: Append new entries to the Change Log with each change, preserving previous entries.
-Placement: If no changelog section exists, insert one with an artificial anchor.
 
-Instructions for Maintaining Change Log
 
-Check Change Log: Verify if the script has a Change Log section. If absent, add it with an artificial anchor.
-Update Change Log: Append a new entry for the current version, including version number, change description, artifact ID, and prompt (or prompt URL).
-Ensure Uniqueness: Use unique anchors for the changelog section to avoid conflicts (e.g., # ARTIFICIAL ANCHOR: changelog).
-Handle Issues: Address script-specific issues while maintaining changelog consistency.
-Example: For a script at version 1.0, updating to 1.1 adds a Change Log entry for version 1.1 with the change’s artifact ID and prompt URL.
-Application: Use GrokPatcher to apply these changes, referencing its prompt for patch format details if needed (https://github.com/twinforces/groktools/docs/prompts/grokpatcher_prompt.md).
+Append New Entry:
 
-Maintain the Change Log to ensure traceability of script changes.
-Cross-References:
+Add a brief description and artifact ID for the update.
 
-GrokPatcher: https://github.com/twinforces/groktools/docs/grokpatcher.md
-Versioning: https://github.com/twinforces/groktools/docs/versioning.md
-Prompt Storage: https://github.com/twinforces/groktools/docs/prompt_storage.md
-Restart: https://github.com/twinforces/groktools/docs/restart.md
+Example:
+# Change Log:
+# - Initial version, artifact ID: 1234
+# - Added feature, artifact ID: 5678
+
+
+
+
+Maintain Consistency:
+
+Use bullet points and include artifact IDs, avoiding duplicates.
+
+
+
+Notes
+
+Apply this prompt to update Change Logs, independent of versioning or patching.
+The patching system (grokpatcher.py, patchBuilder.py, diffextract.py) facilitates changelog updates by automating script modifications.
+For human-readable details, see docs/changelogs.md.
 
