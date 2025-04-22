@@ -17,8 +17,9 @@ if ! command -v python &> /dev/null; then
 fi
 
 # Logging setup
-LOG_FILE="examples/apply_patches.log"
-echo "Starting patch application process at $(date)" > "$LOG_FILE"
+LOG_FILE="apply_patches.log"
+echo "=== apply_patches.log ===" > "$LOG_FILE"
+echo "Starting patch application process at $(date)" >> "$LOG_FILE"
 
 # List of patch stages (before -> after -> target -> output_patch)
 PATCH_STAGES=(
@@ -47,30 +48,36 @@ for stage in "${PATCH_STAGES[@]}"; do
 
     echo "Generating patch: $before_path -> $after_path for target $target_path" | tee -a "$LOG_FILE"
     
-    # Generate patch using patchBuilder.py
-    python src/patchBuilder.py "$before_path" "$after_path" "$output_patch" >> "$LOG_FILE" 2>&1
-    if [ $? -ne 0 ]; then
-        echo "Error: Failed to generate patch $output_patch. Check $LOG_FILE for details." | tee -a "$LOG_FILE"
+    # Debug: Log the command being executed
+    echo "Executing: python src/patchBuilder.py \"$before_path\" \"$after_path\" \"$output_patch\" \"$target_path\"" | tee -a "$LOG_FILE"
+    
+    # Generate patch using patchBuilder.py, passing target_path, capturing output
+    patch_builder_output=$(python src/patchBuilder.py "$before_path" "$after_path" "$output_patch" "$target_path" 2>&1)
+    patch_builder_exit_code=$?
+    echo "$patch_builder_output" | tee -a "$LOG_FILE"
+    if [ $patch_builder_exit_code -ne 0 ]; then
+        echo "Error: Failed to generate patch $output_patch. Check $LOG_FILE and patchbuilder.log for details." | tee -a "$LOG_FILE"
+        echo "PatchBuilder output: $patch_builder_output" | tee -a "$LOG_FILE"
         exit 1
     fi
 
     # Update the Target and InputFile in the patch to match the target_path
     patch_content=$(cat "$output_patch")
-    updated_patch_content=$(echo "$patch_content" | sed "s/# Target: .*/# Target: $(basename "$target_path")/" | sed "s/# InputFile: .*/# InputFile: $(basename "$target_path")/")
+    updated_patch_content=$(echo "$patch_content" | sed "s/# Target: .*/# Target: $(basename \"$target_path\")/" | sed "s/# InputFile: .*/# InputFile: $(basename \"$target_path\")/")
     echo "$updated_patch_content" > "$output_patch"
 
-    # Echo the generated patch
-    echo "Generated patch content:" | tee -a "$LOG_FILE"
+    # Debug: Log the patch content after modification
+    echo "Patch content after sed modification:" | tee -a "$LOG_FILE"
     cat "$output_patch" | tee -a "$LOG_FILE"
     
     # Copy patch to clipboard with a newline
-    echo -e "$(cat "$output_patch")\n" | pbcopy
+    echo -e "$(cat \"$output_patch\")\n" | pbcopy
     echo "Patch copied to clipboard." | tee -a "$LOG_FILE"
 
-    # Start grokpatcher.py with --verbose and --buildRevert, capturing output
-    echo "Starting grokpatcher.py with --verbose and --buildRevert... Please paste the patch (Command + V) into the terminal." | tee -a "$LOG_FILE"
+    # Start grokpatcher.py with --verbose, --buildRevert, and --base-dir, capturing output
+    echo "Starting grokpatcher.py with --verbose, --buildRevert, and --base-dir... Please paste the patch (Command + V) into the terminal." | tee -a "$LOG_FILE"
     revert_patch="${output_patch%.grokpatch}_revert.grokpatch"
-    patch_output=$(python src/grokpatcher.py --verbose --buildRevert "$revert_patch" < "$output_patch" 2>&1)
+    patch_output=$(python src/grokpatcher.py --verbose --buildRevert "$revert_patch" --base-dir "examples" < "$output_patch" 2>&1)
     patch_exit_code=$?
     echo "$patch_output" | tee -a "$LOG_FILE"
     if [ $patch_exit_code -ne 0 ]; then
@@ -115,12 +122,12 @@ for ((i=${#REVERT_PATCHES[@]}-1; i>=0; i--)); do
     echo "Applying revert patch: $revert_patch" | tee -a "$LOG_FILE"
     
     # Copy revert patch to clipboard with a newline
-    echo -e "$(cat "$revert_patch")\n" | pbcopy
+    echo -e "$(cat \"$revert_patch\")\n" | pbcopy
     echo "Revert patch copied to clipboard." | tee -a "$LOG_FILE"
 
-    # Start grokpatcher.py with --verbose, capturing output
-    echo "Starting grokpatcher.py with --verbose... Please paste the revert patch (Command + V) into the terminal." | tee -a "$LOG_FILE"
-    revert_output=$(python src/grokpatcher.py --verbose < "$revert_patch" 2>&1)
+    # Start grokpatcher.py with --verbose and --base-dir, capturing output
+    echo "Starting grokpatcher.py with --verbose and --base-dir... Please paste the revert patch (Command + V) into the terminal." | tee -a "$LOG_FILE"
+    revert_output=$(python src/grokpatcher.py --verbose --base-dir "examples" < "$revert_patch" 2>&1)
     revert_exit_code=$?
     echo "$revert_output" | tee -a "$LOG_FILE"
     if [ $revert_exit_code -ne 0 ]; then

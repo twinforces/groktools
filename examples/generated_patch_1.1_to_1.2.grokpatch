@@ -1,10 +1,10 @@
 # GrokPatcher v1.0
 # Target: example_script.py
-# FromVersion: v1.0
-# ToVersion: v1.1
+# FromVersion: v1.1
+# ToVersion: v1.2
 # InputFile: example_script.py
-# OutputFile: example_script_1.0_before_vv1.1.py
-# ArtifactID: b1bc628d-da06-47f3-9eca-bc7f5a2cba8c
+# OutputFile: example_script_1.1_before_vv1.2.py
+# ArtifactID: 0a6da3cf-0dae-4ab9-b652-8e829ecac7ae
 
 [Section]
 Anchor: constants
@@ -15,21 +15,21 @@ Content:
     # User: Script configuration constants.
     # grok: Define script version and configuration constants.
     # korg:
-    VERSION = "v1.1"
+    VERSION = "v1.2"
 
 [Section]
 Anchor: changelog
 AnchorType: artificial
 Action: replace
 Content:
-    - Version 1.1: Initialized groktools suite with VERSION, Change Log, and grok: annotations.
-      Artifact ID: f0a1b2c3-d4e5-6f7a-8b9c-0d1e2f3a4b5c
+    - Version 1.2: Implemented data processing with regex.
+      Artifact ID: a2b3c4d5-e6f7-8a9b-0c1d-2e3f4a5b6c7d
       Prompt: https://github.com/twinforces/groktools/docs/prompts/grokpatcher_prompt.md
     """
     
     # User: Process input data for analysis.
     # fileref: data.txt
-    # grok: Parse input data using regex to extract fields, placeholder for parsing logic.
+    # grok: Parse input data using regex to extract fields, expecting pipe-separated values.
     # korg:
 
 [Section]
@@ -37,6 +37,7 @@ Anchor: def process_data(input_data):
 AnchorType: natural
 Action: replace
 Content:
-        # Placeholder for data parsing logic
-        pass
+        import re
+        fields = re.split(r'\|', input_data)
+        return fields
 !DONE!

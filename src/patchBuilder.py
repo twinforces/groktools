@@ -1,255 +1,182 @@
-import uuid
-import logging
 import sys
-import re
-import difflib
+import logging
 from typing import List, Dict, Optional, Tuple
 from pathlib import Path
+from datetime import datetime
+import pytz
+import difflib
 
-# Constants for grokpatch format
-PATCH_HEADER = """# GrokPatcher v1.0
-# Target: {target}
-# FromVersion: {from_version}
-# ToVersion: {to_version}
-# InputFile: {input_file}
-# OutputFile: {output_file}
-# ArtifactID: {artifact_id}
-"""
-SECTION_TEMPLATE = """
-[Section]
-Anchor: {anchor}
-AnchorType: {anchor_type}
-Action: {action}
-Content:
-{content}
-"""
-DELIMITER = "!DONE!"
-
-# Precompile regex for version string, anchors, and docstrings
-VERSION_RE = re.compile(r'VERSION\s*=\s*"v(\d+)\.(\d+)"')
-DEF_RE = re.compile(r'^def\s+\w+\s*\(.*\):')
-ANCHOR_RE = re.compile(r'^# ARTIFICIAL ANCHOR: .+')
-DOCSTRING_RE = re.compile(r'^\s*"""')
-
-# Configure logging to a separate file
+# Configure logging
 logging.basicConfig(
     filename="patchbuilder.log",
     level=logging.DEBUG,
     format="%(asctime)s - %(levelname)s - %(message)s"
 )
+with open("patchbuilder.log", "w") as f:
+    f.write("=== patchbuilder.log ===\n")
 
-class PatchSection:
-    """Represents a single section in a grokpatch file."""
-    def __init__(self, anchor: str, anchor_type: str, action: str, content: str):
-        self.anchor = anchor
-        self.anchor_type = anchor_type.lower()
-        self.action = action.lower()
-        self.content = self._format_content(content)
-
-    def _format_content(self, content: str) -> str:
-        """Formats content with 4-space indentation and escapes backticks."""
-        lines = content.splitlines()
-        indented_lines = ["    " + line for line in lines]
-        return "\n".join(indented_lines).replace("`", "\\`")
-
-    def to_string(self) -> str:
-        """Generates the section string in grokpatch format."""
-        return SECTION_TEMPLATE.format(
-            anchor=self.anchor,
-            anchor_type=self.anchor_type,
-            action=self.action,
-            content=self.content
-        )
+class Change:
+    """Represents a change in the edit script."""
+    def __init__(self, line0: int, line1: int, deleted: int, inserted: int):
+        self.line0 = line0
+        self.line1 = line1
+        self.deleted = deleted
+        self.inserted = inserted
+        self.link = None
 
 class PatchBuilder:
-    """Builds a grokpatch file by comparing before and after files."""
-    def __init__(self, target: str, before_path: str, after_path: str):
-        self.target = target
+    """Builds a diff -u patch by comparing before and after files."""
+    def __init__(self, target_path: str, before_path: str, after_path: str):
+        self.target = target_path
         self.before_path = before_path
         self.after_path = after_path
-        self.input_file = target
-        self.sections: List[PatchSection] = []
-        self.from_version, self.to_version = self._increment_version()
-        # Use the target file's base name for the OutputFile
-        target_base = Path(target).stem
-        self.output_file = f"{target_base}_{self.to_version}.{Path(target).suffix.lstrip('.')}"
-        self.artifact_id = str(uuid.uuid4())
+        self.input_file = Path(target_path).name
+        self.before_lines = Path(before_path).read_text(encoding="utf-8").splitlines()
+        self.after_lines = Path(after_path).read_text(encoding="utf-8").splitlines()
+        self.context = 2  # Default context lines for unified diff
 
-    def _increment_version(self) -> Tuple[str, str]:
-        """Finds the VERSION string in the before file, increments it, and logs the change."""
-        try:
-            before_content = Path(self.before_path).read_text(encoding="utf-8")
-            match = VERSION_RE.search(before_content)
-            if not match:
-                logging.error(f"No VERSION string found in {self.before_path}")
-                raise ValueError(f"No VERSION string found in {self.before_path}")
+    def _build_edit_script(self) -> Optional[Change]:
+        """Builds an edit script by comparing before and after lines."""
+        matcher = difflib.SequenceMatcher(None, self.before_lines, self.after_lines)
+        script = None
+        for tag, i1, i2, j1, j2 in matcher.get_opcodes():
+            if tag == 'equal':
+                continue
+            deleted = i2 - i1
+            inserted = j2 - j1
+            if deleted > 0 or inserted > 0:
+                change = Change(i1, j1, deleted, inserted)
+                change.link = script
+                script = change
+        return script
 
-            major, minor = map(int, match.groups())
-            from_version = f"v{major}.{minor}"
-            to_version = f"v{major}.{minor + 1}"
-            
-            logging.info(f"Version incremented from {from_version} to {to_version}")
-            return from_version, to_version
+    def _find_hunk(self, script: Optional[Change]) -> Optional[Change]:
+        """Finds the next hunk to print, splitting at large gaps of unchanged lines."""
+        if not script:
+            return None
+        threshold = 2 * self.context + 1
+        current = script
+        while current:
+            next_change = current.link
+            if not next_change:
+                return current
+            top0 = current.line0 + current.deleted
+            gap = next_change.line0 - top0
+            if gap >= threshold:
+                return current
+            current = next_change
+        return script
 
-        except Exception as e:
-            logging.error(f"Failed to increment version: {str(e)}", exc_info=True)
-            raise RuntimeError(f"Failed to increment version: {str(e)}")
+    def _print_unidiff_hunk(self, hunk: Change, before_lines: List[str], after_lines: List[str]) -> str:
+        """Generates a unified diff hunk."""
+        first0, last0 = hunk.line0, hunk.line0 + hunk.deleted - 1
+        first1, last1 = hunk.line1, hunk.line1 + hunk.inserted - 1
 
-    def add_section(self, anchor: str, anchor_type: str, action: str, content: str) -> None:
-        """Adds a section to the patch, replacing any existing section with the same anchor."""
-        if anchor_type not in ("natural", "artificial"):
-            logging.error(f"Invalid anchor_type: {anchor_type}, must be 'natural' or 'artificial'")
-            raise ValueError(f"Invalid anchor_type: {anchor_type}")
-        if action not in ("replace", "insert", "delete"):
-            logging.error(f"Invalid action: {action}, must be 'replace', 'insert', or 'delete'")
-            raise ValueError(f"Invalid action: {action}")
-        
-        # Remove any existing section with the same anchor
-        existing_count = sum(1 for s in self.sections if s.anchor == anchor)
-        self.sections = [s for s in self.sections if s.anchor != anchor]
-        logging.debug(f"Removed {existing_count} existing sections with anchor={anchor}")
-        
-        section = PatchSection(anchor, anchor_type, action, content)
-        self.sections.append(section)
-        logging.debug(f"Added section: anchor={anchor}, anchor_type={anchor_type}, action={action}")
+        # Add context
+        first0 = max(0, first0 - self.context)
+        first1 = max(0, first1 - self.context)
+        last0 = min(len(before_lines) - 1, last0 + self.context) if last0 + self.context < len(before_lines) else len(before_lines) - 1
+        last1 = min(len(after_lines) - 1, last1 + self.context) if last1 + self.context < len(after_lines) else len(after_lines) - 1
 
-    def generate_patch(self) -> None:
-        """Generates patch sections by comparing before and after files."""
-        try:
-            before_lines = Path(self.before_path).read_text(encoding="utf-8").splitlines()
-            after_lines = Path(self.after_path).read_text(encoding="utf-8").splitlines()
+        # Adjust line counts for unified diff (1-based, include context)
+        count0 = last0 - first0 + 1 if last0 >= first0 else 0
+        count1 = last1 - first1 + 1 if last1 >= first1 else 0
 
-            # Update VERSION in after_lines if needed
-            after_content = "\n".join(after_lines)
-            if VERSION_RE.search(after_content):
-                after_content = VERSION_RE.sub(f'VERSION = "{self.to_version}"', after_content)
-                after_lines = after_content.splitlines()
-                # Add a section for the VERSION update
-                self.add_section(
-                    anchor="constants",
-                    anchor_type="artificial",
-                    action="replace",
-                    content=f'# ARTIFICIAL ANCHOR: constants\n# User: Script configuration constants.\n# grok: Define script version and configuration constants.\n# korg:\nVERSION = "{self.to_version}"'
-                )
+        # Unified diff line numbers are 1-based
+        start0 = first0 + 1 if count0 > 0 else first0
+        start1 = first1 + 1 if count1 > 0 else first1
 
-            # Use difflib to compare files
-            differ = difflib.Differ()
-            diff = list(differ.compare(before_lines, after_lines))
+        # Handle empty ranges for patch compatibility
+        if count0 == 0:
+            start0 = first0
+        if count1 == 0:
+            start1 = first1
 
-            # Group changes into sections
-            current_section_lines = []
-            current_action = None
-            current_anchor = None
-            current_anchor_type = None
-            line_num = 0
-            anchor_line_num = -1
-            in_section = False
-            in_docstring = False
+        # Hunk header
+        count0_str = f"{count0}" if count0 > 0 else "0"
+        count1_str = f"{count1}" if count1 > 0 else "0"
+        hunk_output = f"@@ -{start0},{count0_str} +{start1},{count1_str} @@\n"
 
-            for line in diff:
-                line_num += 1
-                stripped_line = line[2:].strip() if line.startswith(("+ ", "- ")) else line.strip()
+        # Print lines
+        i, j = first0, first1
+        next_hunk = hunk
 
-                # Check for docstring start/end
-                if DOCSTRING_RE.match(stripped_line):
-                    in_docstring = not in_docstring
+        while i <= last0 or j <= last1:
+            if not next_hunk or i < next_hunk.line0:
+                # Unchanged line from before file
+                line = before_lines[i]
+                hunk_output += f" {line}\n"
+                i += 1
+                j += 1
+            else:
+                # Deletions
+                k = next_hunk.deleted
+                while k > 0 and i <= last0:
+                    line = before_lines[i]
+                    hunk_output += f"-{line}\n"
+                    i += 1
+                    k -= 1
 
-                # Check for anchor lines
-                is_def = DEF_RE.match(stripped_line)
-                is_anchor = ANCHOR_RE.match(stripped_line)
-                if (is_def or is_anchor) and not in_docstring:
-                    if current_section_lines and in_section:
-                        # End the previous section
-                        content = "\n".join(current_section_lines)
-                        if content.strip():
-                            self.add_section(current_anchor, current_anchor_type, current_action, content)
-                        current_section_lines = []
-                        current_action = None
-                        in_section = False
-                    if is_def:
-                        current_anchor = stripped_line.split(":", 1)[0].strip()
-                        current_anchor_type = "natural"
-                    else:
-                        current_anchor = stripped_line.split(":", 1)[1].strip()
-                        current_anchor_type = "artificial"
-                    anchor_line_num = line_num
+                # Insertions
+                k = next_hunk.inserted
+                while k > 0 and j <= last1:
+                    line = after_lines[j]
+                    hunk_output += f"+{line}\n"
+                    j += 1
+                    k -= 1
 
-                if line.startswith("  "):  # No change
-                    if current_section_lines and anchor_line_num != line_num:
-                        current_section_lines.append(line[2:])
-                    continue
+                next_hunk = next_hunk.link
 
-                # Start a new section if we encounter a change
-                if not current_anchor:
-                    current_anchor = f"section_{line_num}"
-                    current_anchor_type = "artificial"
-
-                in_section = True
-
-                # Determine action based on diff markers
-                if line.startswith("- "):
-                    if current_action is None:
-                        current_action = "replace" if any(l.startswith("+ ") for l in diff[line_num-1:]) else "delete"
-                    if current_action == "delete":
-                        current_section_lines.append(line[2:])
-                elif line.startswith("+ "):
-                    if current_action is None:
-                        current_action = "replace" if any(l.startswith("- ") for l in diff[:line_num]) else "insert"
-                    current_section_lines.append(line[2:])
-
-            # Add the last section if there are pending changes
-            if current_section_lines and in_section:
-                content = "\n".join(current_section_lines)
-                if content.strip():
-                    self.add_section(current_anchor, current_anchor_type, current_action, content)
-
-        except Exception as e:
-            logging.error(f"Failed to generate patch: {str(e)}", exc_info=True)
-            raise RuntimeError(f"Failed to generate patch: {str(e)}")
+        return hunk_output
 
     def build(self, output_path: Optional[str] = None) -> str:
-        """Generates the grokpatch content and optionally writes to a file."""
+        """Generates a diff -u patch and writes to a file if specified."""
         try:
-            patch_content = PATCH_HEADER.format(
-                target=self.target,
-                from_version=self.from_version,
-                to_version=self.to_version,
-                input_file=self.input_file,
-                output_file=self.output_file,
-                artifact_id=self.artifact_id
-            )
-            
-            for section in self.sections:
-                patch_content += section.to_string()
-            
-            patch_content += DELIMITER
-            
+            # File headers with timestamps
+            timestamp = "2025-04-21 23:14:00.000000000 -0700"
+            patch_content = f"--- {self.before_path}\t{timestamp}\n"
+            patch_content += f"+++ {self.after_path}\t{timestamp}\n"
+
+            # Build edit script
+            script = self._build_edit_script()
+
+            # Generate hunks
+            current = script
+            first_hunk = True
+            while current:
+                hunk_end = self._find_hunk(current)
+                hunk_content = self._print_unidiff_hunk(current, self.before_lines, self.after_lines)
+                if not first_hunk:
+                    patch_content += "\n"  # Blank line between hunks
+                patch_content += hunk_content
+                first_hunk = False
+                current = hunk_end.link
+
             if output_path:
                 Path(output_path).write_text(patch_content, encoding="utf-8")
-                logging.info(f"Grokpatch written to {output_path}")
-            
+                logging.info(f"Unified diff patch written to {output_path}")
+
             return patch_content
-        
+
         except Exception as e:
-            logging.error(f"Failed to build grokpatch: {str(e)}", exc_info=True)
-            raise RuntimeError(f"Failed to build grokpatch: {str(e)}")
+            logging.error(f"Failed to build unified diff patch: {str(e)}", exc_info=True)
+            raise RuntimeError(f"Failed to build unified diff patch: {str(e)}")
 
 def main():
     """CLI entry point for patchBuilder.py."""
-    if len(sys.argv) < 4:
-        print("Usage: python patchBuilder.py <before_path> <after_path> <output_path>")
+    if len(sys.argv) < 5:
+        print("Usage: python patchBuilder.py <before_path> <after_path> <output_path> <target_path>")
         sys.exit(1)
 
     before_path = sys.argv[1]
     after_path = sys.argv[2]
     output_path = sys.argv[3]
-    target = Path(before_path).name
+    target_path = sys.argv[4]
 
     try:
-        builder = PatchBuilder(target, before_path, after_path)
-        builder.generate_patch()
+        builder = PatchBuilder(target_path, before_path, after_path)
         patch_content = builder.build(output_path)
-        print(f"Generated grokpatch:\n{patch_content}")
+        print(f"Generated unified diff patch:\n{patch_content}")
     except RuntimeError as e:
         print(f"Error: {e}", file=sys.stderr)
         sys.exit(1)
