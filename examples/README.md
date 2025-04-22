@@ -1,73 +1,51 @@
-Examples for groktools Patches
-This directory contains example scripts and patches demonstrating how to use groktools to maintain Python scripts with versioning, changelogs, and prompt storage. The patches are designed to be applied using grokpatcher.py from the src/ directory.
-Files
+Examples
+This directory demonstrates the patching workflow for groktools, using apply_patches.sh to apply .grokpatch files to scripts and non-code files (e.g., poems in patchtest/).
+Setup
 
-example_script.py: A sample script starting at version 1.0, updated to 1.1 and 1.2 through patches.
-another_script.py: A second sample script starting at version 2.0, updated to 2.1 and 2.2 through patches.
-patch_example_1.0_to_1.1.grokpatch: Updates example_script.py from 1.0 to 1.1.
-patch_another_2.0_to_2.1.grokpatch: Updates another_script.py from 2.0 to 2.1.
-patch_example_1.1_to_1.2.grokpatch: Updates example_script.py from 1.1 to 1.2.
-patch_another_2.1_to_2.2.grokpatch: Updates another_script.py from 2.1 to 2.2.
-apply_patches.sh: A shell script to test applying the patches in sequence.
+Prerequisites:
 
-Prerequisites
-
-Python 3.6+: Ensure Python is installed to run grokpatcher.py.
-macOS Environment: The instructions use pbcopy for copying patch content to the clipboard, which is macOS-specific.
-grokpatcher.py: Located in src/, this script applies the patches.
-
-Applying Patches with pbcopy and grokpatcher
-Each patch file updates a specific script from one version to the next. Follow these steps to apply a patch using pbcopy and grokpatcher.py:
-
-Navigate to the Project Directory:Ensure you’re in the root of the groktools repository:
-cd /path/to/groktools
+Python 3.8+.
+GNU diff (diff) and gpatch (gpatch):
+macOS: brew install diffutils gpatch
+Linux: Typically pre-installed.
 
 
-Start grokpatcher.py:Run the patcher in the terminal, which will wait for patch input:
-python src/grokpatcher.py
+pbcopy (macOS).
+Ensure src/grokpatcher.py and src/diffextract.py exist.
 
 
-Copy the Patch to Clipboard:Use pbcopy to copy the patch content to your clipboard. For example, to apply the first patch for example_script.py:
-pbcopy < examples/patch_example_1.0_to_1.1.grokpatch
+Directory Structure:
 
-
-Paste the Patch into grokpatcher:In the terminal running grokpatcher.py, paste the patch content:
-
-On macOS, press Command + V to paste.
-Alternatively, pipe the content directly using pbpaste:pbpaste | python src/grokpatcher.py
+patchtest/: Non-code patches (e.g., second_coming_patch.grokpatch, henry_v_patch.grokpatch).
+Sample patches: patch1.grokpatch, patch2.grokpatch.
+Sample scripts: Place scripts (e.g., script.py, SecondComing.txt) in examples/.
 
 
 
-However, since grokpatcher.py is already running, manual pasting is typically used for sequential patches.
+Running the Demo
 
-Apply the Patch:After pasting, grokpatcher.py will process the patch and write the updated file (e.g., example_script_1.1.py). Since the patch ends with !DONE!, it will rename the output to example_script.py and exit. Restart grokpatcher.py for the next patch.
-
-Repeat for Each Patch:Apply the patches in sequence:
-
-patch_example_1.0_to_1.1.grokpatch
-patch_example_1.1_to_1.2.grokpatch
-patch_another_2.0_to_2.1.grokpatch
-patch_another_2.1_to_2.2.grokpatch
+Make Script Executable:
+chmod +x apply_patches.sh
 
 
-
-Testing with the Shell Script
-The apply_patches.sh script automates applying all patches in sequence, useful for testing the full workflow:
-
-Make the Script Executable:
-chmod +x examples/apply_patches.sh
+Run Demo:
+./apply_patches.sh
 
 
-Run the Script:
-./examples/apply_patches.sh
+Expected Behavior:
+
+Applies patch1.grokpatch and patch2.grokpatch to a script (e.g., script.py), creating versions (.1, .2).
+Applies patchtest/second_coming_patch.grokpatch and patchtest/henry_v_patch.grokpatch to non-code files (e.g., SecondComing.txt), handling Unicode characters (e.g., right quotation marks).
+Uses !NEXT! to switch files and !DONE! to finalize.
+Logs to apply_patches.log.
 
 
 
-The script copies each patch to the clipboard and applies it using grokpatcher.py, pausing to allow manual pasting. Follow the on-screen instructions to paste each patch into the running grokpatcher.py instance.
+Unicode Handling
+Non-code patches (e.g., patchtest/henry_v_patch.grokpatch) may contain Unicode characters (e.g., ’). By default, apply_patches.sh preserves these with UTF-8 encoding. To normalize (e.g., convert ’ to '), set NORMALIZE_UNICODE=1 in the script.
 Notes
 
-Patch Order: Patches must be applied in version order (e.g., 1.0 -> 1.1, then 1.1 -> 1.2) to maintain consistency.
-macOS Focus: The use of pbcopy assumes a macOS environment. For other systems (e.g., Linux), you might use xclip or directly pipe the patch file into grokpatcher.py (e.g., cat patch_file | python src/grokpatcher.py).
-Restarting grokpatcher.py: Each patch file ends with !DONE!, which terminates grokpatcher.py. The shell script restarts it for each patch, but you can modify patches to use !NEXT! instead if you prefer a single session for multiple files.
+See docs/prompts/grokpatcher_prompt.md (Base URL: https://github.com/twinforces/groktools/raw/refs/heads/master/) for patching details.
+For script details, see docs/grokpatcher.md and docs/patchBuilder.md.
+Ensure sample scripts and patches exist in examples/ before running.
 
-For more details on the groktools suite, see the main README.md in the repository root.
