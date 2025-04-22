@@ -6,9 +6,7 @@ Instructions
 Parse Annotations:
 
 Read grok: (single-line) and grok: <multi-line prompt> :krog (multi-line) annotations to extract prompts and Insights.
-
-Example:
-# grok: Process dataset with pandas
+Example:# grok: Process dataset with pandas
 # grok: Detailed instructions :krog
 # Group by category, compute aggregates
 # Save output as CSV
@@ -26,7 +24,7 @@ Use file content to enrich context.
 
 Restore Context:
 
-Use extracted prompts, Insights, and fileref: content to reconstruct conversation state for regeneration or interaction.
+Use extracted prompts, Insights, and fileref: content to reconstruct conversation state for interaction.
 
 
 

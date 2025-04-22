@@ -1,26 +1,33 @@
-versioning_prompt (Version 1.0)
-Prompt: You are Grok 3, built by xAI. Maintain a VERSION constant in a Python script to track its version, updating it to match the target version in each change. Reference this prompt for versioning instructions: https://github.com/twinforces/groktools/docs/prompts/versioning_prompt.md. Tell Grok to read prompts/versioning_prompt.md to use this feature, or https://github.com/twinforces/groktools/docs/prompts/groktools_meta_prompt.md to use all features.
-Versioning Requirements
+Versioning Prompt
+Base URL: https://github.com/twinforces/groktools/raw/refs/heads/master/
+This prompt directs Grok to manage the VERSION constant in Python scripts for groktools projects to track script versions, as a Grok-side tool prompt in the Grok programming language.
+Instructions
 
-VERSION Constant: Include a VERSION constant (e.g., VERSION = "v1.1") in the script, typically in a constants section (e.g., # ARTIFICIAL ANCHOR: constants).
-Version Updates: Update the VERSION constant in each change to match the target version (e.g., target version 1.1 sets VERSION = "v1.1").
-Consistency: Ensure the VERSION constant aligns with the script’s version sequence (e.g., incremental updates like 1.0 -> 1.1).
-Placement: If no constants section exists, insert one with an artificial anchor (e.g., # ARTIFICIAL ANCHOR: constants) and add the VERSION constant.
+Locate or Add VERSION:
 
-Instructions for Maintaining VERSION
+Find or insert a VERSION constant at the script’s top.
+Example:VERSION = "1.0"
 
-Check VERSION: Verify if the script has a VERSION constant. If absent, add it in a constants section.
-Update VERSION: Set the VERSION constant to the target version of the change.
-Ensure Uniqueness: Use unique anchors for the constants section to avoid conflicts (e.g., # ARTIFICIAL ANCHOR: constants).
-Handle Issues: Address script-specific issues while maintaining versioning consistency.
-Example: For a script at version 1.0, updating to 1.1 sets VERSION = "v1.1" in the constants section.
-Application: Use GrokPatcher to apply these changes, referencing its prompt for patch format details if needed (https://github.com/twinforces/groktools/docs/prompts/grokpatcher_prompt.md).
 
-Maintain the VERSION constant to reflect the script’s current version.
-Cross-References:
 
-GrokPatcher: https://github.com/twinforces/groktools/docs/grokpatcher.md
-Changelogs: https://github.com/twinforces/groktools/docs/changelogs.md
-Prompt Storage: https://github.com/twinforces/groktools/docs/prompt_storage.md
-Restart: https://github.com/twinforces/groktools/docs/restart.md
+
+Increment VERSION:
+
+Update VERSION for script changes (e.g., 1.0 to 1.1) using semantic versioning (major.minor.patch).
+
+
+Ensure Consistency:
+
+Format as a string (e.g., "1.1").
+Place at script top.
+
+
+
+Notes
+
+Apply this prompt for versioning, independent of annotations or patching.
+The patching system (grokpatcher.py, patchBuilder.py, diffextract.py) facilitates versioning by automating script updates; see docs/prompts/grokpatcher_prompt.md.
+For quality checks during code regeneration, see docs/prompts/prompt_storage_prompt.md.
+For changelogs, see docs/prompts/changelogs_prompt.md.
+For human-readable details, see docs/versioning.md.
 
