@@ -25,8 +25,11 @@ Content:
 """
 DELIMITER = "!DONE!"
 
-# Precompile regex for version string
+# Precompile regex for version string, anchors, and docstrings
 VERSION_RE = re.compile(r'VERSION\s*=\s*"v(\d+)\.(\d+)"')
+DEF_RE = re.compile(r'^def\s+\w+\s*\(.*\):')
+ANCHOR_RE = re.compile(r'^# ARTIFICIAL ANCHOR: .+')
+DOCSTRING_RE = re.compile(r'^\s*"""')
 
 # Configure logging to a separate file
 logging.basicConfig(
@@ -67,7 +70,9 @@ class PatchBuilder:
         self.input_file = target
         self.sections: List[PatchSection] = []
         self.from_version, self.to_version = self._increment_version()
-        self.output_file = f"{target.rsplit('.', 1)[0]}_{self.to_version}.{target.rsplit('.', 1)[1] if '.' in target else 'py'}"
+        # Use the target file's base name for the OutputFile
+        target_base = Path(target).stem
+        self.output_file = f"{target_base}_{self.to_version}.{Path(target).suffix.lstrip('.')}"
         self.artifact_id = str(uuid.uuid4())
 
     def _increment_version(self) -> Tuple[str, str]:
@@ -91,13 +96,18 @@ class PatchBuilder:
             raise RuntimeError(f"Failed to increment version: {str(e)}")
 
     def add_section(self, anchor: str, anchor_type: str, action: str, content: str) -> None:
-        """Adds a section to the patch."""
+        """Adds a section to the patch, replacing any existing section with the same anchor."""
         if anchor_type not in ("natural", "artificial"):
             logging.error(f"Invalid anchor_type: {anchor_type}, must be 'natural' or 'artificial'")
             raise ValueError(f"Invalid anchor_type: {anchor_type}")
         if action not in ("replace", "insert", "delete"):
             logging.error(f"Invalid action: {action}, must be 'replace', 'insert', or 'delete'")
             raise ValueError(f"Invalid action: {action}")
+        
+        # Remove any existing section with the same anchor
+        existing_count = sum(1 for s in self.sections if s.anchor == anchor)
+        self.sections = [s for s in self.sections if s.anchor != anchor]
+        logging.debug(f"Removed {existing_count} existing sections with anchor={anchor}")
         
         section = PatchSection(anchor, anchor_type, action, content)
         self.sections.append(section)
@@ -119,7 +129,7 @@ class PatchBuilder:
                     anchor="constants",
                     anchor_type="artificial",
                     action="replace",
-                    content=f'# ARTIFICIAL ANCHOR: constants\nVERSION = "{self.to_version}"'
+                    content=f'# ARTIFICIAL ANCHOR: constants\n# User: Script configuration constants.\n# grok: Define script version and configuration constants.\n# korg:\nVERSION = "{self.to_version}"'
                 )
 
             # Use difflib to compare files
@@ -132,37 +142,49 @@ class PatchBuilder:
             current_anchor = None
             current_anchor_type = None
             line_num = 0
+            anchor_line_num = -1
+            in_section = False
+            in_docstring = False
 
             for line in diff:
                 line_num += 1
-                if line.startswith("  "):  # No change
-                    if current_section_lines:
-                        # End of a changed section, add it
+                stripped_line = line[2:].strip() if line.startswith(("+ ", "- ")) else line.strip()
+
+                # Check for docstring start/end
+                if DOCSTRING_RE.match(stripped_line):
+                    in_docstring = not in_docstring
+
+                # Check for anchor lines
+                is_def = DEF_RE.match(stripped_line)
+                is_anchor = ANCHOR_RE.match(stripped_line)
+                if (is_def or is_anchor) and not in_docstring:
+                    if current_section_lines and in_section:
+                        # End the previous section
                         content = "\n".join(current_section_lines)
-                        self.add_section(current_anchor, current_anchor_type, current_action, content)
+                        if content.strip():
+                            self.add_section(current_anchor, current_anchor_type, current_action, content)
                         current_section_lines = []
                         current_action = None
-                        current_anchor = None
-                        current_anchor_type = None
+                        in_section = False
+                    if is_def:
+                        current_anchor = stripped_line.split(":", 1)[0].strip()
+                        current_anchor_type = "natural"
+                    else:
+                        current_anchor = stripped_line.split(":", 1)[1].strip()
+                        current_anchor_type = "artificial"
+                    anchor_line_num = line_num
+
+                if line.startswith("  "):  # No change
+                    if current_section_lines and anchor_line_num != line_num:
+                        current_section_lines.append(line[2:])
                     continue
 
-                # Determine anchor based on the line before the change
+                # Start a new section if we encounter a change
                 if not current_anchor:
-                    # Look for Python constructs or artificial anchors in the preceding lines
-                    for i in range(max(0, line_num - 2), -1, -1):
-                        prev_line = before_lines[i] if i < len(before_lines) else ""
-                        if prev_line.startswith("def "):
-                            current_anchor = prev_line.split(":", 1)[0].strip()
-                            current_anchor_type = "natural"
-                            break
-                        elif prev_line.startswith("# ARTIFICIAL ANCHOR:"):
-                            current_anchor = prev_line.split(":", 1)[1].strip()
-                            current_anchor_type = "artificial"
-                            break
-                    if not current_anchor:
-                        # Fallback to a generic anchor
-                        current_anchor = f"section_{line_num}"
-                        current_anchor_type = "artificial"
+                    current_anchor = f"section_{line_num}"
+                    current_anchor_type = "artificial"
+
+                in_section = True
 
                 # Determine action based on diff markers
                 if line.startswith("- "):
@@ -176,9 +198,10 @@ class PatchBuilder:
                     current_section_lines.append(line[2:])
 
             # Add the last section if there are pending changes
-            if current_section_lines:
+            if current_section_lines and in_section:
                 content = "\n".join(current_section_lines)
-                self.add_section(current_anchor, current_anchor_type, current_action, content)
+                if content.strip():
+                    self.add_section(current_anchor, current_anchor_type, current_action, content)
 
         except Exception as e:
             logging.error(f"Failed to generate patch: {str(e)}", exc_info=True)
