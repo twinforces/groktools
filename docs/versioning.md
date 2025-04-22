@@ -1,41 +1,39 @@
-versioning (Version 1.0)
-Versioning is a groktools component that ensures Python scripts maintain a VERSION constant to track their version. It integrates with Changelogs, Prompt Storage, and Restart tools for comprehensive script maintenance. Tell Grok to read prompts/versioning_prompt.md to use this feature, or https://github.com/twinforces/groktools/docs/prompts/groktools_meta_prompt.md to use all features.
-Features
+Versioning
+Versioning is a mechanism in groktools for tracking script versions by maintaining a VERSION constant in Python scripts. It ensures traceability and consistency across updates, independent of annotations or patching processes.
+Overview
 
-VERSION Constant: A constant (e.g., VERSION = "v1.1") tracks the script’s version.
-Incremental Updates: Updates the VERSION constant to match the target version.
-Consistency: Ensures version alignment across updates.
-
-Versioning Requirements
-
-VERSION Constant: Include a VERSION constant in the script, typically in a constants section (e.g., # ARTIFICIAL ANCHOR: constants).
-Version Updates: Update the VERSION constant in each change to match the target version.
-Placement: If no constants section exists, insert one with an artificial anchor.
-
-Instructions for Maintaining VERSION
-The following instructions, hosted at https://github.com/twinforces/groktools/docs/prompts/versioning_prompt.md, guide versioning maintenance:
-
-[Insert content from versioning_prompt.md here, identical to above]
-
-Installation
-
-Save docs/versioning.md (this documentation).
-Ensure https://github.com/twinforces/groktools/docs/prompts/versioning_prompt.md is accessible.
+Purpose: Track script versions to maintain a clear history of changes.
+Mechanism: Uses a VERSION constant (e.g., VERSION = "1.0") in scripts, incremented by Grok during version updates.
+Usage: Managed by Grok via specific prompts for version control.
 
 Usage
-Apply changes to update the VERSION constant using GrokPatcher, as described in grokpatcher.md. Verify the VERSION constant in the script after applying changes.
-Contributing
 
-Fork the repository at https://github.com/twinforces/groktools.
-Submit pull requests with new features or bug fixes.
-Report issues via GitHub Issues.
+Add VERSION Constant:
 
-License
-MIT License. See https://github.com/twinforces/groktools/LICENSE for details.
-Cross-References:
+Include a VERSION constant in scripts to track the current version.
+Example:VERSION = "1.0"
+def main():
+    print("Hello, World!")
 
-GrokPatcher: https://github.com/twinforces/groktools/docs/grokpatcher.md
-Changelogs: https://github.com/twinforces/groktools/docs/changelogs.md
-Prompt Storage: https://github.com/twinforces/groktools/docs/prompt_storage.md
-Restart: https://github.com/twinforces/groktools/docs/restart.md
+
+
+
+Increment VERSION:
+
+Grok increments the VERSION constant (e.g., 1.0 to 1.1) when updating scripts, using docs/prompts/versioning_prompt.md or docs/prompts/groktools_meta_prompt.md.
+
+
+
+Workflow
+
+Version Management: Tell Grok to manage versioning by referencing docs/prompts/versioning_prompt.md or docs/prompts/groktools_meta_prompt.md.
+Script Updates: Grok updates the VERSION constant as part of script modifications, independent of annotations or patching.
+
+Notes
+
+Versioning is orthogonal to grok: annotations, patch generation, and patch application, focusing solely on maintaining the VERSION constant.
+The patching system (e.g., grokpatcher.py, patchBuilder.py, diffextract.py) makes versioning easier by automating script updates, facilitating consistent version tracking.
+VERSION incrementing is handled by Grok, not user-side tools like patchBuilder.py, typically via docs/prompts/versioning_prompt.md or docs/prompts/groktools_meta_prompt.md, which are Grok-side tool prompts in the Grok programming language.
+For patching details, see docs/grokpatcher.md and docs/patchBuilder.md.
+For annotation details, see docs/prompt_storage.md.
 
