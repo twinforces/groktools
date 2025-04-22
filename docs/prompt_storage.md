@@ -1,44 +1,58 @@
-prompt_storage (Version 1.0)
-Prompt Storage is a groktools component that ensures Python scripts maintain a top-level prompt and grok:-annotated comments to document their purpose and functionality, with a process to clarify unclear sections and patch explanations back. It integrates with Versioning, Changelogs, and Restart tools. Tell Grok to read prompts/prompt_storage_prompt.md to use this feature, or https://github.com/twinforces/groktools/docs/prompts/groktools_meta_prompt.md to use all features.
-Features
+Prompt Storage
+Prompt Storage is a mechanism in groktools for embedding grok:-annotated comments in Python scripts to store documentation and context restoration data. It enables scripts to be self-bootstrapping, allowing Grok to resume conversations seamlessly.
+Overview
 
-Top-Level Prompt: A docstring at the script’s top, referencing the appropriate prompt for applying changes.
-grok: Annotations: Comments prefixed with # grok: to explain key functions, blocks, or complex logic, terminated with # korg: for multiline comments, with user descriptions optional.
-fileref: References: Comments prefixed with # fileref: to indicate sections generated from external files, enabling context restoration via file uploads.
-Clarification Process: Queries unclear sections and patches clarifications as grok: comments.
-
-Prompt Storage Requirements
-
-Top-Level Prompt: Include a docstring at the script’s top (e.g., """Generate changes using GrokPatcher as described in https://github.com/twinforces/groktools/docs/prompts/grokpatcher_prompt.md.""").
-grok: Annotations: Add # grok: comments before major functions, complex blocks, or unclear sections, using # korg: for multiline termination, with user descriptions optional.
-fileref: References: Add # fileref: <filename> comments for sections tied to external files, to be requested during context restoration.
-Clarification Process: Identify unclear sections, query the user, and patch clarifications as # grok: comments.
-Updates: Maintain and expand annotations with each change, ensuring 3am clarity for coders.
-
-Instructions for Maintaining Prompt Storage
-The following instructions, hosted at https://github.com/twinforces/groktools/docs/prompts/prompt_storage_prompt.md, guide prompt storage maintenance:
-
-[Insert content from prompt_storage_prompt.md here, identical to above]
-
-Installation
-
-Save docs/prompt_storage.md (this documentation).
-Ensure https://github.com/twinforces/groktools/docs/prompts/prompt_storage_prompt.md is accessible.
+Purpose: Store prompts and context within scripts to support documentation and context restoration.
+Mechanism: Uses grok: for single-line comments and grok: <prompt> :krog for multi-line comment blocks, with optional fileref: tags to reference external files necessary for full context.
+Usage: Integrated with the Restart tool to bootstrap Grok’s context.
 
 Usage
-Apply changes to update prompts and annotations using GrokPatcher, as described in grokpatcher.md. Verify the top-level prompt and grok: annotations in the script after applying changes.
-Contributing
 
-Fork the repository at https://github.com/twinforces/groktools.
-Submit pull requests with new features or bug fixes.
-Report issues via GitHub Issues.
+Add grok: Annotations:
 
-License
-MIT License. See https://github.com/twinforces/groktools/LICENSE for details.
-Cross-References:
+Use grok: for single-line comments to store concise prompts or context.
+Use grok: krog: to start a multi-line comment block, ending with # :krog.
+Example:# grok: Process this dataset with pandas
+# grok: Detailed instructions for data processing
+# Analyze the dataset using pandas and group by category
+# Ensure output is saved as CSV
+# :krog
+import pandas as pd
 
-GrokPatcher: https://github.com/twinforces/groktools/docs/grokpatcher.md
-Versioning: https://github.com/twinforces/groktools/docs/versioning.md
-Changelogs: https://github.com/twinforces/groktools/docs/changelogs.md
-Restart: https://github.com/twinforces/groktools/docs/restart.md
+
+
+
+Reference External Files:
+
+Use fileref: within grok: or grok: krog: to point to external documentation or prompt files necessary for grok to understand.
+Example:# grok: fileref: docs/prompts/diffu_prompt.md
+# grok: fileref: dataset_schema.md
+# Schema details for processing
+# :krog:
+
+
+
+
+Context Restoration:
+
+The Restart tool (see docs/restart.md) parses grok: and grok: krog: annotations to restore Grok’s context.
+
+
+
+Workflow
+
+Annotation: Add grok: or grok: <prompt> :krog comments during script development and/or instruct grok to maintain them using the prompt_storage_prompt.
+Storage: Store context or reference external files with fileref:.
+Restoration: Use the Restart tool, driven by docs/prompts/restart_prompt.md, to parse annotations and bootstrap Grok.
+
+Standards
+
+Follow docs/prompts/bestpractices.md for consistent annotation formatting, a Grok-side tool prompt in the Grok programming language.
+See docs/prompts/prompt_storage_prompt.md for Grok’s interaction guidelines, a Grok-side tool prompt.
+
+Notes
+
+grok: and grok: :krog annotations are script-embedded and independent of docs/prompts/, though fileref: may reference prompt files.
+For context restoration details, see docs/restart.md.
+For related patching tools, see docs/grokpatcher.md and docs/patchBuilder.md.
 
