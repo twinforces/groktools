@@ -5,6 +5,7 @@
 import sys
 import logging
 import os
+import subprocess
 from pathlib import Path
 
 # Constants
@@ -54,26 +55,39 @@ class GrokPatcher:
         version_suffix = f".{self.version_count}"
         versioned_output = f"{output_path}{version_suffix}"
         # Apply the patch using gpatch with -p0, using the input_path from !INPUT:
-        cmd = f"gpatch -p0 --output={versioned_output} {input_path} < {extracted_diff_file} 2> gpatch_error.log"
-        logging.debug(f"Executing: {cmd}")
-        result = os.system(cmd)
+        cmd = [
+            "gpatch",
+            "-p0",
+            f"--output={versioned_output}",
+            input_path
+        ]
+        logging.debug(f"Executing: {' '.join(cmd)} < {extracted_diff_file}")
+        with open(extracted_diff_file, "rb") as diff_file:
+            process = subprocess.run(
+                cmd,
+                stdin=diff_file,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+                text=True
+            )
+        result = process.returncode
         if result != 0:
-            # Read the error output from gpatch
-            with open("gpatch_error.log", "r") as f:
-                error_output = f.read()
             logging.error(f"Error applying patch to {versioned_output}: {result}")
-            logging.error(f"gpatch error output: {error_output}")
-            raise RuntimeError(f"Error applying patch to {versioned_output}: {result}\ngpatch error output: {error_output}")
+            logging.error(f"gpatch stdout: {process.stdout}")
+            logging.error(f"gpatch stderr: {process.stderr}")
+            raise RuntimeError(f"Error applying patch to {versioned_output}: {result}\ngpatch stdout: {process.stdout}\ngpatch stderr: {process.stderr}")
         
-        # Verify the output file was created and modified
+        # Verify the output file was created and has content
         if not os.path.exists(versioned_output):
             logging.error(f"Output file not created: {versioned_output}")
             raise RuntimeError(f"Output file not created: {versioned_output}")
+        if os.path.getsize(versioned_output) == 0:
+            logging.error(f"Output file is empty: {versioned_output}")
+            raise RuntimeError(f"Output file is empty: {versioned_output}")
         
         # Clean up temp files
         os.remove("temp.grokpatch")
         os.remove(extracted_diff_file)
-        os.remove("gpatch_error.log")
         return versioned_output
 
     def process_patch(self):
