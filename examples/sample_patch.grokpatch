@@ -1,0 +1,11 @@
+!INPUT: examples/sample_script.py
+!OUTPUT: examples/sample_script.py
+--- examples/sample_script.py	1970-01-01 00:00:00
++++ examples/sample_script.py	1970-01-01 00:00:00
+@@ -1,4 +1,4 @@
+-def greet(name):
++def greet(name, greeting="Hello"):
+     message = f"{greeting}, {name}!"
+     print(message)
+     return message
+!GO!

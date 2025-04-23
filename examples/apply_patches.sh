@@ -2,6 +2,7 @@
 # apply_patches.sh
 # Applies .grokpatch files in the examples/ directory, including patchtest/ non-code patches, using grokpatcher.py.
 # Supports Unicode characters with optional normalization.
+# Temporarily saves extracted diff for debugging.
 
 set -e
 
@@ -11,6 +12,7 @@ PROJECT_ROOT="$(dirname "$SCRIPT_DIR")"
 GROKPATCHER="$PROJECT_ROOT/src/grokpatcher.py"
 DIFFEXTRACT="$PROJECT_ROOT/src/diffextract.py"
 LOG_FILE="$SCRIPT_DIR/apply_patches.log"
+DEBUG_DIFF="$SCRIPT_DIR/debug_diff.txt"
 NORMALIZE_UNICODE=0  # Set to 1 to normalize Unicode (e.g., convert ’ to ')
 
 # Ensure prerequisites
@@ -49,17 +51,21 @@ apply_patch() {
     # Handle Unicode: UTF-8 encoding or normalization
     if [ "$NORMALIZE_UNICODE" -eq 1 ]; then
         # Normalize Unicode (e.g., right quote ’ to straight quote ')
-        (iconv -f UTF-8 -t UTF-8 "$patch_file" | sed "s/\’/\'/g"; echo) | pbcopy
-        (iconv -f UTF-8 -t UTF-8 "$patch_file" | sed "s/\’/\'/g"; echo) | python3 "$GROKPATCHER" >&3
+        diff_content=$(iconv -f UTF-8 -t UTF-8 "$patch_file" | sed "s/\’/\'/g"; echo)
+        echo "$diff_content" | pbcopy
+        echo "$diff_content" > "$DEBUG_DIFF"
+        echo "$diff_content" | python3 "$GROKPATCHER" >&3
     else
         # Preserve Unicode with UTF-8
-        (iconv -f UTF-8 -t UTF-8 "$patch_file"; echo) | pbcopy
-        (iconv -f UTF-8 -t UTF-8 "$patch_file"; echo) | python3 "$GROKPATCHER" >&3
+        diff_content=$(iconv -f UTF-8 -t UTF-8 "$patch_file"; echo)
+        echo "$diff_content" | pbcopy
+        echo "$diff_content" > "$DEBUG_DIFF"
+        echo "$diff_content" | python3 "$GROKPATCHER" >&3
     fi
 }
 
 # Apply sample patches
-PATCHES=("patch1.grokpatch" "patch2.grokpatch" "patchtest/second_coming_patch.grokpatch" "patchtest/henry_v_patch.grokpatch")
+PATCHES=("patch1.grokpatch" "patch2.grokpatch" "patchtest/second_coming_patch.grokpatch" "patchtest/henry_v_patch.grokpatch" "patchtest/second_coming_no_newline_patch.grokpatch")
 for patch in "${PATCHES[@]}"; do
     # Check both examples/ and project root for patchtest/
     if [ -f "$SCRIPT_DIR/$patch" ]; then

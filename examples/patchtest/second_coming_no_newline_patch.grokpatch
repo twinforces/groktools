@@ -1,0 +1,12 @@
+!INPUT: examples/patchtest/SecondComing_no_newline.txt
+!OUTPUT: examples/patchtest/SecondComing_no_newline.txt
+--- examples/patchtest/SecondComing_no_newline.txt	1970-01-01 00:00:00
++++ examples/patchtest/SecondComing_no_newline.txt	1970-01-01 00:00:00
+@@ -1,3 +1,4 @@
+ Turning and turning in the widening gyre
+-The weasel cannot hear the wrangler;
++The weasel cannot hear the wrangler's call;
+ Things fall apart; the centre cannot hold;
++\ No newline at end of file
++'Mere anarchy is loosed upon the world,'
+!GO!
