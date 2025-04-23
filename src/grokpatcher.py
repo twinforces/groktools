@@ -53,8 +53,8 @@ class GrokPatcher:
 
         version_suffix = f".{self.version_count}"
         versioned_output = f"{output_path}{version_suffix}"
-        # Apply the patch using gpatch with -p0
-        cmd = f"gpatch -p0 --output={versioned_output} < {extracted_diff_file} 2> gpatch_error.log"
+        # Apply the patch using gpatch with -p0, specifying the input file
+        cmd = f"gpatch -p0 --output={versioned_output} {input_path} < {extracted_diff_file} 2> gpatch_error.log"
         logging.debug(f"Executing: {cmd}")
         result = os.system(cmd)
         if result != 0:
@@ -64,6 +64,11 @@ class GrokPatcher:
             logging.error(f"Error applying patch to {versioned_output}: {result}")
             logging.error(f"gpatch error output: {error_output}")
             raise RuntimeError(f"Error applying patch to {versioned_output}: {result}\ngpatch error output: {error_output}")
+        
+        # Verify the output file was created and modified
+        if not os.path.exists(versioned_output):
+            logging.error(f"Output file not created: {versioned_output}")
+            raise RuntimeError(f"Output file not created: {versioned_output}")
         
         # Clean up temp files
         os.remove("temp.grokpatch")
@@ -92,11 +97,13 @@ class GrokPatcher:
                 # Apply the patch
                 versioned_output = self.apply_patch(self.input_path, self.output_path, diff_content)
                 print(f"Patch applied to {versioned_output}")
+                # Increment version count after applying a patch
+                self.version_count += 1
             elif line.strip() == "!NEXT!":
                 self.version_count += 1
             elif line.strip() == "!DONE!":
                 # Replace the original file with the latest version
-                latest_version = f"{self.output_path}.{self.version_count}"
+                latest_version = f"{self.output_path}.{self.version_count - 1}"
                 if os.path.exists(latest_version):
                     os.rename(latest_version, self.output_path)
                     print(f"Patch set completed: {self.output_path} updated")
