@@ -77,6 +77,9 @@ class GrokPatcher:
                 text=True
             )
         result = process.returncode
+        # Log gpatch output regardless of success
+        logging.debug(f"gpatch stdout: {process.stdout}")
+        logging.debug(f"gpatch stderr: {process.stderr}")
         if result != 0:
             logging.error(f"Error applying patch to {versioned_output}: {result}")
             logging.error(f"gpatch stdout: {process.stdout}")
@@ -89,7 +92,9 @@ class GrokPatcher:
             raise RuntimeError(f"Output file not created: {versioned_output}")
         if os.path.getsize(versioned_output) == 0:
             logging.error(f"Output file is empty: {versioned_output}")
-            raise RuntimeError(f"Output file is empty: {versioned_output}")
+            logging.error(f"gpatch stdout: {process.stdout}")
+            logging.error(f"gpatch stderr: {process.stderr}")
+            raise RuntimeError(f"Output file is empty: {versioned_output}\ngpatch stdout: {process.stdout}\ngpatch stderr: {process.stderr}")
         
         # Clean up temp files
         os.remove("temp.grokpatch")
