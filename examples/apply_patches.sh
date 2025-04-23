@@ -1,90 +1,60 @@
 #!/bin/bash
 # apply_patches.sh
-# Applies .grokpatch files in the examples/ directory, including patchtest/ non-code patches, using grokpatcher.py.
-# Supports Unicode characters with optional normalization.
-# Temporarily saves extracted diff for debugging.
+# Applies a series of .grokpatch files, generating doit.sh for manual patching.
 
 set -e
 
-# Constants
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-PROJECT_ROOT="$(dirname "$SCRIPT_DIR")"
-GROKPATCHER="$PROJECT_ROOT/src/grokpatcher.py"
-DIFFEXTRACT="$PROJECT_ROOT/src/diffextract.py"
-LOG_FILE="$SCRIPT_DIR/apply_patches.log"
-DEBUG_DIFF="$SCRIPT_DIR/debug_diff.txt"
-TEMP_PATCH="$SCRIPT_DIR/temp_patch.grokpatch"
-NORMALIZE_UNICODE=0  # Set to 1 to normalize Unicode (e.g., convert ’ to ')
+# Create a log file for debugging
+LOG_FILE=examples/apply_patches.log
+date > "$LOG_FILE"
 
-# Ensure prerequisites
-if ! command -v pbcopy >/dev/null; then
-    echo "Error: pbcopy not found (macOS required)" >&2
-    exit 1
-fi
-if ! command -v gpatch >/dev/null; then
-    echo "Error: gpatch not found (install via 'brew install gpatch' on macOS)" >&2
-    exit 1
-fi
-if [ ! -f "$GROKPATCHER" ]; then
-    echo "Error: grokpatcher.py not found at $GROKPATCHER" >&2
-    exit 1
-fi
-if [ ! -f "$DIFFEXTRACT" ]; then
-    echo "Error: diffextract.py not found at $DIFFEXTRACT" >&2
-    exit 1
-fi
+# List of .grokpatch files to apply
+PATCH_FILES=(
+    "examples/patch1.grokpatch"
+    "examples/patch2.grokpatch"
+    "examples/patchtest/second_coming_patch.grokpatch"
+    "examples/patchtest/henry_v_patch.grokpatch"
+    "examples/patchtest/second_coming_no_newline_patch.grokpatch"
+)
 
-# Setup logging
-exec 3>&1  # Save stdout for piping
-exec 1>>"$LOG_FILE" 2>&1
-echo "$(date): Starting apply_patches.sh"
-
-# Apply patch function
-apply_patch() {
-    local patch_file="$1"
-    echo "$(date): Applying $patch_file" >&3
-    echo "$(date): Applying $patch_file"
-    if [ ! -f "$patch_file" ]; then
-        echo "$(date): Warning: $patch_file not found, skipping" >&3
-        echo "$(date): Warning: $patch_file not found, skipping"
-        return
-    fi
-    # Handle Unicode: UTF-8 encoding or normalization
-    if [ "$NORMALIZE_UNICODE" -eq 1 ]; then
-        # Normalize Unicode (e.g., right quote ’ to straight quote ')
-        cat "$patch_file" | sed "s/\’/\'/g" > "$TEMP_PATCH"
-    else
-        cp "$patch_file" "$TEMP_PATCH"
-    fi
-    cat "$TEMP_PATCH" | pbcopy
-    cat "$TEMP_PATCH" > "$DEBUG_DIFF"
-    # Log the patch content being applied
-    echo "$(date): Patch content:" >> "$LOG_FILE"
-    cat "$TEMP_PATCH" >> "$LOG_FILE"
-    python3 "$GROKPATCHER" < "$TEMP_PATCH" >&3
-    rm -f "$TEMP_PATCH"
-}
-
-# Apply sample patches
-PATCHES=("patch1.grokpatch" "patch2.grokpatch" "patchtest/second_coming_patch.grokpatch" "patchtest/henry_v_patch.grokpatch" "patchtest/second_coming_no_newline_patch.grokpatch")
-for patch in "${PATCHES[@]}"; do
-    # Check both examples/ and project root for patchtest/
-    if [ -f "$SCRIPT_DIR/$patch" ]; then
-        apply_patch "$SCRIPT_DIR/$patch"
-    elif [ -f "$PROJECT_ROOT/$patch" ]; then
-        apply_patch "$PROJECT_ROOT/$patch"
-    else
-        echo "$(date): Warning: $patch not found in $SCRIPT_DIR/ or $PROJECT_ROOT/, skipping" >&3
-        echo "$(date): Warning: $patch not found in $SCRIPT_DIR/ or $PROJECT_ROOT/, skipping"
-    fi
+# Concatenate all patch files with newline separators and check for !DONE!
+echo "Processing patch files:" | tee -a "$LOG_FILE"
+TEMP_FILE=$(mktemp)
+for PATCH_FILE in "${PATCH_FILES[@]}"; do
+    echo "Including $PATCH_FILE" | tee -a "$LOG_FILE"
+    echo "Patch content:" >> "$LOG_FILE"
+    cat "$PATCH_FILE" >> "$LOG_FILE"
+    echo "" >> "$LOG_FILE"
+    # Append the file content and ensure a newline
+    cat "$PATCH_FILE" >> "$TEMP_FILE"
+    echo "" >> "$TEMP_FILE"
 done
 
-# Finalize with !DONE!
-echo "!DONE!" | pbcopy
-echo "!DONE!" > "$TEMP_PATCH"
-python3 "$GROKPATCHER" < "$TEMP_PATCH" >&3
-rm -f "$TEMP_PATCH"
+# Check for !DONE! marker
+if ! grep -q "^!DONE!" "$TEMP_FILE"; then
+    echo "Error: !DONE! marker not found in patch set" | tee -a "$LOG_FILE"
+    rm "$TEMP_FILE"
+    exit 1
+fi
 
-echo "$(date): Patch application complete" >&3
-echo "$(date): Patch application complete"
-exec 1>&3 3>&-  # Restore stdout
+# Process the concatenated patch files
+cat "$TEMP_FILE" | iconv -f UTF-8 -t UTF-8 | python3 src/grokpatcher.py
+
+# Clean up temp file
+rm "$TEMP_FILE"
+
+# Run the generated doit.sh to apply patches
+if [ -f "doit.sh" ]; then
+    echo "Running doit.sh to apply patches..." | tee -a "$LOG_FILE"
+    echo "Contents of doit.sh:" >> "$LOG_FILE"
+    cat doit.sh >> "$LOG_FILE"
+    echo "" >> "$LOG_FILE"
+    ./doit.sh | tee -a "$LOG_FILE"
+    # Preserve generated diff files for debugging
+    echo "Generated diff files preserved for debugging:" | tee -a "$LOG_FILE"
+    ls -l diff*.diff >> "$LOG_FILE" 2>/dev/null || echo "No diff files found" >> "$LOG_FILE"
+    echo "Patch application complete" | tee -a "$LOG_FILE"
+else
+    echo "Error: doit.sh not generated" | tee -a "$LOG_FILE"
+    exit 1
+fi
