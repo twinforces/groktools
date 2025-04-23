@@ -22,6 +22,7 @@ logging.basicConfig(
 class GrokPatcher:
     def __init__(self):
         self.version_count = 0
+        self.current_file = None
         self.input_path = None
         self.output_path = None
         self.diffextract_script = "src/diffextract.py"
@@ -39,8 +40,8 @@ class GrokPatcher:
         """Apply a patch to the input file, creating a versioned output file."""
         self.validate_metadata(input_path, output_path)
         
-        # Write diff to temp file for gpatch
-        with open("temp.grokpatch", "w") as f:
+        # Write diff to temp file for gpatch, ensuring UTF-8 encoding
+        with open("temp.grokpatch", "w", encoding="utf-8") as f:
             f.write(diff_content)
         
         # Extract the diff using diffextract.py into another temp file
@@ -54,22 +55,16 @@ class GrokPatcher:
 
         version_suffix = f".{self.version_count}"
         versioned_output = f"{output_path}{version_suffix}"
-        # Apply the patch using gpatch with -p0, using the input_path from !INPUT:
-        cmd = [
-            "gpatch",
-            "-p0",
-            f"--output={versioned_output}",
-            input_path
-        ]
-        logging.debug(f"Executing: {' '.join(cmd)} < {extracted_diff_file}")
-        with open(extracted_diff_file, "rb") as diff_file:
-            process = subprocess.run(
-                cmd,
-                stdin=diff_file,
-                stdout=subprocess.PIPE,
-                stderr=subprocess.PIPE,
-                text=True
-            )
+        # Apply the patch using gpatch with -p0, using a shell command for redirection
+        cmd = f"gpatch -p0 --output={versioned_output} {input_path} < {extracted_diff_file} 2> gpatch_error.log"
+        logging.debug(f"Executing: {cmd}")
+        process = subprocess.run(
+            cmd,
+            shell=True,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            text=True
+        )
         result = process.returncode
         if result != 0:
             logging.error(f"Error applying patch to {versioned_output}: {result}")
@@ -88,11 +83,13 @@ class GrokPatcher:
         # Clean up temp files
         os.remove("temp.grokpatch")
         os.remove(extracted_diff_file)
+        if os.path.exists("gpatch_error.log"):
+            os.remove("gpatch_error.log")
         return versioned_output
 
     def process_patch(self):
         """Process a .grokpatch file from stdin, handling metadata and applying patches."""
-        # Read patch content from stdin
+        # Read patch content from stdin with UTF-8 encoding
         patch_content = sys.stdin.read()
         
         # Parse metadata
@@ -105,6 +102,10 @@ class GrokPatcher:
                 self.input_path = line[len("!INPUT:"):].strip()
             elif line.startswith("!OUTPUT:"):
                 self.output_path = line[len("!OUTPUT:"):].strip()
+                # Reset version count if we're patching a new file
+                if self.current_file != self.output_path:
+                    self.current_file = self.output_path
+                    self.version_count = 0
             elif line.strip() == "!GO!":
                 # Extracted diff content (excluding metadata)
                 diff_content = "\n".join(diff_lines) + "\n\n"
