@@ -60,7 +60,7 @@ class GrokPatcher:
 
         version_suffix = f".{self.version_count}"
         versioned_output = f"{output_path}{version_suffix}"
-        # Apply the patch using gpatch with -p0, using subprocess.run with explicit stdin
+        # Apply the patch using gpatch with -p0, using subprocess.run with binary input
         cmd = [
             "gpatch",
             "-p0",
@@ -74,17 +74,19 @@ class GrokPatcher:
                 stdin=diff_file,
                 stdout=subprocess.PIPE,
                 stderr=subprocess.PIPE,
-                text=True
+                text=False  # Use binary mode for output
             )
         result = process.returncode
-        # Log gpatch output regardless of success
-        logging.debug(f"gpatch stdout: {process.stdout}")
-        logging.debug(f"gpatch stderr: {process.stderr}")
+        # Decode stdout and stderr for logging
+        stdout = process.stdout.decode('utf-8', errors='replace')
+        stderr = process.stderr.decode('utf-8', errors='replace')
+        logging.debug(f"gpatch stdout: {stdout}")
+        logging.debug(f"gpatch stderr: {stderr}")
         if result != 0:
             logging.error(f"Error applying patch to {versioned_output}: {result}")
-            logging.error(f"gpatch stdout: {process.stdout}")
-            logging.error(f"gpatch stderr: {process.stderr}")
-            raise RuntimeError(f"Error applying patch to {versioned_output}: {result}\ngpatch stdout: {process.stdout}\ngpatch stderr: {process.stderr}")
+            logging.error(f"gpatch stdout: {stdout}")
+            logging.error(f"gpatch stderr: {stderr}")
+            raise RuntimeError(f"Error applying patch to {versioned_output}: {result}\ngpatch stdout: {stdout}\ngpatch stderr: {stderr}")
         
         # Verify the output file was created and has content
         if not os.path.exists(versioned_output):
@@ -92,9 +94,9 @@ class GrokPatcher:
             raise RuntimeError(f"Output file not created: {versioned_output}")
         if os.path.getsize(versioned_output) == 0:
             logging.error(f"Output file is empty: {versioned_output}")
-            logging.error(f"gpatch stdout: {process.stdout}")
-            logging.error(f"gpatch stderr: {process.stderr}")
-            raise RuntimeError(f"Output file is empty: {versioned_output}\ngpatch stdout: {process.stdout}\ngpatch stderr: {process.stderr}")
+            logging.error(f"gpatch stdout: {stdout}")
+            logging.error(f"gpatch stderr: {stderr}")
+            raise RuntimeError(f"Output file is empty: {versioned_output}\ngpatch stdout: {stdout}\ngpatch stderr: {stderr}")
         
         # Clean up temp files
         os.remove("temp.grokpatch")
