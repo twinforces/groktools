@@ -1,3 +1,11 @@
-Turning and turning in the widening gyre
-The falcon cannot hear the falconer;
-Things fall apart; the centre cannot hold;
+!INPUT: examples/patchtest/SecondComing.txt
+!OUTPUT: examples/patchtest/SecondComing.txt
+--- examples/patchtest/SecondComing.txt	1970-01-01 00:00:00
++++ examples/patchtest/SecondComing.txt	1970-01-01 00:00:00
+@@ -1,3 +1,4 @@
+ Turning and turning in the widening gyre
+-The falcon cannot hear the falconer;
++The falcon cannot hear the falconer’s call;
+ Things fall apart; the centre cannot hold;
++‘Mere anarchy is loosed upon the world,’
+!GO!
