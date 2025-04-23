@@ -60,16 +60,22 @@ class GrokPatcher:
 
         version_suffix = f".{self.version_count}"
         versioned_output = f"{output_path}{version_suffix}"
-        # Apply the patch using gpatch with -p0, using subprocess.run with shell command
-        cmd = f"gpatch -p0 --output={versioned_output} {input_path} < {extracted_diff_file}"
-        logging.debug(f"Executing: {cmd}")
-        process = subprocess.run(
-            cmd,
-            shell=True,
-            stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE,
-            text=True
-        )
+        # Apply the patch using gpatch with -p0, using subprocess.run without shell
+        cmd = [
+            "gpatch",
+            "-p0",
+            f"--output={versioned_output}",
+            input_path
+        ]
+        logging.debug(f"Executing: {' '.join(cmd)} < {extracted_diff_file}")
+        with open(extracted_diff_file, "rb") as diff_file:
+            process = subprocess.run(
+                cmd,
+                stdin=diff_file,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+                text=True
+            )
         result = process.returncode
         # Log gpatch output regardless of success
         logging.debug(f"gpatch stdout: {process.stdout}")
