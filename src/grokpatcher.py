@@ -1,18 +1,15 @@
 # grokpatcher.py
-# Applies .grokpatch copypastas to Python scripts, creating versioned files and using diffextract.py and gpatch.
-# Follows docs/prompts/grokpatcher_prompt.md and docs/prompts/bestpractices.md.
+# Applies .grokpatch files using gpatch, supporting versioning and multi-file patches.
+# Follows docs/grokpatcher.md, docs/prompts/diffu_prompt.md, and docs/prompts/bestpractices.md.
 
-import subprocess
 import sys
-import os
-import shutil
-from pathlib import Path
 import logging
+import os
+from pathlib import Path
 
 # Constants
 LOG_FILE = "grokpatcher.log"
-MAX_PATCH_SIZE = 1024 * 1024  # 1MB limit for pasted patches
-TEMP_FILE = "temp.grokpatch"
+MAX_PATCH_SIZE = 1024 * 1024  # 1MB limit for patch files
 
 # Configure logging
 logging.basicConfig(
@@ -21,158 +18,109 @@ logging.basicConfig(
     format="%(asctime)s - %(levelname)s - %(message)s"
 )
 
-def parse_grokpatch(patch_content):
-    """Parse .grokpatch content, returning metadata, diff, and markers."""
-    lines = patch_content.splitlines()
-    metadata = {}
-    diff_lines = []
-    marker = None
+class GrokPatcher:
+    def __init__(self):
+        self.version_count = 0
+        self.input_path = None
+        self.output_path = None
+        self.diffextract_script = "src/diffextract.py"
 
-    for line in lines:
-        if line.startswith("!INPUT:"):
-            metadata["input"] = line[len("!INPUT:"):].strip()
-        elif line.startswith("!OUTPUT:"):
-            metadata["output"] = line[len("!OUTPUT:"):].strip()
-        elif line.strip() in ("!GO!", "!DONE!", "!NEXT!"):
-            marker = line.strip()
-            break
-        else:
-            diff_lines.append(line)
+    def validate_metadata(self, input_path, output_path):
+        """Validate input and output paths."""
+        if not Path(input_path).exists():
+            logging.error(f"Input file does not exist: {input_path}")
+            raise ValueError(f"Input file does not exist: {input_path}")
+        if not output_path:
+            logging.error("Output path not specified")
+            raise ValueError("Output path not specified")
 
-    return metadata, "\n".join(diff_lines), marker
+    def apply_patch(self, input_path, output_path, diff_content):
+        """Apply a patch to the input file, creating a versioned output file."""
+        self.validate_metadata(input_path, output_path)
+        
+        # Write diff to temp file for gpatch
+        with open("temp.grokpatch", "w") as f:
+            f.write(diff_content)
+        
+        # Extract the diff using diffextract.py into another temp file
+        extracted_diff_file = "temp_extracted_diff.diff"
+        cmd_extract = f"python3 {self.diffextract_script} temp.grokpatch > {extracted_diff_file}"
+        logging.debug(f"Executing: {cmd_extract}")
+        result = os.system(cmd_extract)
+        if result != 0:
+            logging.error(f"Error extracting diff: {result}")
+            raise RuntimeError(f"Error extracting diff: {result}")
 
-def validate_metadata(metadata, current_file):
-    """Validate metadata, ensuring input file matches current file."""
-    input_path = metadata.get("input")
-    output_path = metadata.get("output")
-    if not input_path or not output_path:
-        logging.error("Missing !INPUT or !OUTPUT in metadata")
-        raise ValueError("Missing !INPUT or !OUTPUT in metadata")
-    if input_path != current_file:
-        logging.error(f"Input file mismatch: expected {current_file}, got {input_path}")
-        raise ValueError(f"Input file mismatch: expected {current_file}, got {input_path}")
-    if not Path(input_path).exists():
-        logging.error(f"Input file does not exist: {input_path}")
-        raise ValueError(f"Input file does not exist: {input_path}")
+        version_suffix = f".{self.version_count}"
+        versioned_output = f"{output_path}{version_suffix}"
+        # Apply the patch using gpatch with -p0
+        cmd = f"gpatch -p0 --output={versioned_output} < {extracted_diff_file} 2> gpatch_error.log"
+        logging.debug(f"Executing: {cmd}")
+        result = os.system(cmd)
+        if result != 0:
+            # Read the error output from gpatch
+            with open("gpatch_error.log", "r") as f:
+                error_output = f.read()
+            logging.error(f"Error applying patch to {versioned_output}: {result}")
+            logging.error(f"gpatch error output: {error_output}")
+            raise RuntimeError(f"Error applying patch to {versioned_output}: {result}\ngpatch error output: {error_output}")
+        
+        # Clean up temp files
+        os.remove("temp.grokpatch")
+        os.remove(extracted_diff_file)
+        os.remove("gpatch_error.log")
+        return versioned_output
 
-def apply_patch(diff_content, input_file, version_suffix):
-    """Apply diff using gpatch, saving to a versioned file."""
-    output_file = f"{input_file}.{version_suffix}"
-    try:
-        # Copy input file to versioned file
-        shutil.copy2(input_file, output_file)
-        # Apply patch
-        result = subprocess.run(
-            ["gpatch", "-p1", "-i", "-"],
-            input=diff_content,
-            text=True,
-            capture_output=True,
-            check=True
-        )
-        logging.info(f"Patch applied to {output_file}")
-        print(f"Patch applied to {output_file}")
-        return output_file
-    except subprocess.CalledProcessError as e:
-        logging.error(f"Error applying patch to {output_file}: {e.stderr}")
-        print(f"Error applying patch to {output_file}: {e.stderr}")
-        return None
-
-def extract_diff(patch_content):
-    """Extract and unescape diff using diffextract.py."""
-    try:
-        with open(TEMP_FILE, "w") as f:
-            f.write(patch_content)
-        result = subprocess.run(
-            ["python", "src/diffextract.py", TEMP_FILE],
-            capture_output=True,
-            text=True,
-            check=True
-        )
-        return result.stdout
-    except subprocess.CalledProcessError as e:
-        logging.error(f"Error extracting diff: {e.stderr}")
-        print(f"Error extracting diff: {e.stderr}")
-        return None
-    finally:
-        if os.path.exists(TEMP_FILE):
-            os.remove(TEMP_FILE)
+    def process_patch(self):
+        """Process a .grokpatch file from stdin, handling metadata and applying patches."""
+        # Read patch content from stdin
+        patch_content = sys.stdin.read()
+        
+        # Parse metadata
+        lines = patch_content.splitlines()
+        diff_lines = []
+        in_diff = False
+        
+        for line in lines:
+            if line.startswith("!INPUT:"):
+                self.input_path = line[len("!INPUT:"):].strip()
+            elif line.startswith("!OUTPUT:"):
+                self.output_path = line[len("!OUTPUT:"):].strip()
+            elif line.strip() == "!GO!":
+                # Extracted diff content (excluding metadata)
+                diff_content = "\n".join(diff_lines) + "\n\n"
+                # Apply the patch
+                versioned_output = self.apply_patch(self.input_path, self.output_path, diff_content)
+                print(f"Patch applied to {versioned_output}")
+            elif line.strip() == "!NEXT!":
+                self.version_count += 1
+            elif line.strip() == "!DONE!":
+                # Replace the original file with the latest version
+                latest_version = f"{self.output_path}.{self.version_count}"
+                if os.path.exists(latest_version):
+                    os.rename(latest_version, self.output_path)
+                    print(f"Patch set completed: {self.output_path} updated")
+                else:
+                    print("Patch set completed")
+                break
+            elif line.startswith("---"):
+                in_diff = True
+                diff_lines.append(line)
+            elif in_diff:
+                diff_lines.append(line)
 
 def main():
-    """Process .grokpatch copypastas from stdin, applying patches and versioning files."""
-    logging.debug("Starting grokpatcher")
-    print("Paste .grokpatch content (end with !GO!, !NEXT!, or !DONE!):")
-    
-    current_file = None
-    version_count = 0
-    patch_content = ""
-    versioned_files = []
-
-    while True:
-        line = sys.stdin.readline()
-        if not line:
-            break
-        patch_content += line
-        if len(patch_content) > MAX_PATCH_SIZE:
-            logging.error("Patch size exceeds limit")
-            print("Error: Patch size exceeds limit")
-            sys.exit(1)
-        if line.strip() in ("!GO!", "!NEXT!", "!DONE!"):
-            try:
-                metadata, diff, marker = parse_grokpatch(patch_content)
-
-                if marker == "!DONE!":
-                    if current_file and versioned_files:
-                        # Save final version as original file
-                        final_file = versioned_files[-1]
-                        shutil.move(final_file, current_file)
-                        logging.info(f"Finalized {current_file} from {final_file}")
-                        print(f"Finalized {current_file} from {final_file}")
-                    logging.info("Patch set completed")
-                    print("Patch set completed")
-                    break
-
-                if marker == "!NEXT!":
-                    if current_file and versioned_files:
-                        # Finalize current file
-                        final_file = versioned_files[-1]
-                        shutil.move(final_file, current_file)
-                        logging.info(f"Finalized {current_file} from {final_file}")
-                        print(f"Finalized {current_file} from {final_file}")
-                    current_file = None
-                    version_count = 0
-                    versioned_files = []
-                    patch_content = ""
-                    continue
-
-                if marker == "!GO!":
-                    if not current_file:
-                        current_file = metadata.get("input")
-                    validate_metadata(metadata, current_file)
-                    diff_content = extract_diff(patch_content)
-                    if not diff_content:
-                        sys.exit(1)
-                    version_count += 1
-                    output_file = apply_patch(diff_content, current_file, version_count)
-                    if output_file:
-                        versioned_files.append(output_file)
-                    else:
-                        sys.exit(1)
-                    patch_content = ""
-                    continue
-
-            except ValueError as e:
-                logging.error(f"Validation error: {str(e)}")
-                print(f"Error: {str(e)}")
-                sys.exit(1)
+    grok_patcher = GrokPatcher()
+    grok_patcher.process_patch()
 
 if __name__ == "__main__":
     try:
         main()
     except KeyboardInterrupt:
         logging.info("Interrupted by user")
-        print("Interrupted by user")
+        print("Interrupted by user", file=sys.stderr)
         sys.exit(0)
     except Exception as e:
         logging.error(f"Unexpected error: {str(e)}")
-        print(f"Unexpected error: {str(e)}")
+        print(f"Unexpected error: {str(e)}", file=sys.stderr)
         sys.exit(1)
