@@ -13,6 +13,7 @@ GROKPATCHER="$PROJECT_ROOT/src/grokpatcher.py"
 DIFFEXTRACT="$PROJECT_ROOT/src/diffextract.py"
 LOG_FILE="$SCRIPT_DIR/apply_patches.log"
 DEBUG_DIFF="$SCRIPT_DIR/debug_diff.txt"
+TEMP_PATCH="$SCRIPT_DIR/temp_patch.grokpatch"
 NORMALIZE_UNICODE=0  # Set to 1 to normalize Unicode (e.g., convert ’ to ')
 
 # Ensure prerequisites
@@ -51,17 +52,14 @@ apply_patch() {
     # Handle Unicode: UTF-8 encoding or normalization
     if [ "$NORMALIZE_UNICODE" -eq 1 ]; then
         # Normalize Unicode (e.g., right quote ’ to straight quote ')
-        diff_content=$(iconv -f UTF-8 -t UTF-8 "$patch_file" | sed "s/\’/\'/g"; echo)
-        echo "$diff_content" | pbcopy
-        echo "$diff_content" > "$DEBUG_DIFF"
-        echo "$diff_content" | python3 "$GROKPATCHER" >&3
+        cat "$patch_file" | sed "s/\’/\'/g" > "$TEMP_PATCH"
     else
-        # Preserve Unicode with UTF-8
-        diff_content=$(iconv -f UTF-8 -t UTF-8 "$patch_file"; echo)
-        echo "$diff_content" | pbcopy
-        echo "$diff_content" > "$DEBUG_DIFF"
-        echo "$diff_content" | python3 "$GROKPATCHER" >&3
+        cp "$patch_file" "$TEMP_PATCH"
     fi
+    cat "$TEMP_PATCH" | pbcopy
+    cat "$TEMP_PATCH" > "$DEBUG_DIFF"
+    python3 "$GROKPATCHER" < "$TEMP_PATCH" >&3
+    rm -f "$TEMP_PATCH"
 }
 
 # Apply sample patches
@@ -80,7 +78,9 @@ done
 
 # Finalize with !DONE!
 echo "!DONE!" | pbcopy
-echo "!DONE!" | python3 "$GROKPATCHER" >&3
+echo "!DONE!" > "$TEMP_PATCH"
+python3 "$GROKPATCHER" < "$TEMP_PATCH" >&3
+rm -f "$TEMP_PATCH"
 
 echo "$(date): Patch application complete" >&3
 echo "$(date): Patch application complete"
