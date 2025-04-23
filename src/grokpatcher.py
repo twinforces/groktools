@@ -5,7 +5,7 @@
 import sys
 import logging
 import os
-import subprocess
+import time
 from pathlib import Path
 
 # Constants
@@ -43,6 +43,9 @@ class GrokPatcher:
         # Write diff to temp file for gpatch, ensuring UTF-8 encoding
         with open("temp.grokpatch", "w", encoding="utf-8") as f:
             f.write(diff_content)
+        # Ensure the temp file is flushed to disk
+        with open("temp.grokpatch", "r") as f:
+            os.fsync(f.fileno())
         
         # Extract the diff using diffextract.py into another temp file
         extracted_diff_file = "temp_extracted_diff.diff"
@@ -53,6 +56,10 @@ class GrokPatcher:
             logging.error(f"Error extracting diff: {result}")
             raise RuntimeError(f"Error extracting diff: {result}")
 
+        # Ensure the extracted diff file is flushed to disk
+        with open(extracted_diff_file, "r") as f:
+            os.fsync(f.fileno())
+
         # Log the content of extracted_diff_file for debugging
         with open(extracted_diff_file, "r", encoding="utf-8") as f:
             diff_content = f.read()
@@ -60,45 +67,40 @@ class GrokPatcher:
 
         version_suffix = f".{self.version_count}"
         versioned_output = f"{output_path}{version_suffix}"
-        # Apply the patch using gpatch with -p0, using subprocess.run without shell
-        cmd = [
-            "gpatch",
-            "-p0",
-            f"--output={versioned_output}",
-            input_path
-        ]
-        logging.debug(f"Executing: {' '.join(cmd)} < {extracted_diff_file}")
-        with open(extracted_diff_file, "rb") as diff_file:
-            process = subprocess.run(
-                cmd,
-                stdin=diff_file,
-                stdout=subprocess.PIPE,
-                stderr=subprocess.PIPE,
-                text=True
-            )
-        result = process.returncode
-        # Log gpatch output regardless of success
-        logging.debug(f"gpatch stdout: {process.stdout}")
-        logging.debug(f"gpatch stderr: {process.stderr}")
+        # Apply the patch using gpatch with -p0 and --verbose, using os.system to match manual test
+        cmd = f"gpatch -p0 --verbose --output={versioned_output} {input_path} < {extracted_diff_file} 2> gpatch_error.log"
+        logging.debug(f"Executing with os.system: {cmd}")
+        result = os.system(cmd)
         if result != 0:
+            with open("gpatch_error.log", "r", encoding="utf-8") as f:
+                error_output = f.read()
             logging.error(f"Error applying patch to {versioned_output}: {result}")
-            logging.error(f"gpatch stdout: {process.stdout}")
-            logging.error(f"gpatch stderr: {process.stderr}")
-            raise RuntimeError(f"Error applying patch to {versioned_output}: {result}\ngpatch stdout: {process.stdout}\ngpatch stderr: {process.stderr}")
+            logging.error(f"gpatch error output: {error_output}")
+            raise RuntimeError(f"Error applying patch to {versioned_output}: {result}\ngpatch error output: {error_output}")
         
+        # Ensure the output file is flushed to disk
+        if os.path.exists(versioned_output):
+            with open(versioned_output, "rb") as f:
+                os.fsync(f.fileno())
+        # Add a longer sleep to allow file system to settle
+        time.sleep(0.2)
+
         # Verify the output file was created and has content
         if not os.path.exists(versioned_output):
             logging.error(f"Output file not created: {versioned_output}")
             raise RuntimeError(f"Output file not created: {versioned_output}")
         if os.path.getsize(versioned_output) == 0:
             logging.error(f"Output file is empty: {versioned_output}")
-            logging.error(f"gpatch stdout: {process.stdout}")
-            logging.error(f"gpatch stderr: {process.stderr}")
-            raise RuntimeError(f"Output file is empty: {versioned_output}\ngpatch stdout: {process.stdout}\ngpatch stderr: {process.stderr}")
+            raise RuntimeError(f"Output file is empty: {versioned_output}")
         
         # Clean up temp files
         os.remove("temp.grokpatch")
         os.remove(extracted_diff_file)
+        if os.path.exists("gpatch_error.log"):
+            with open("gpatch_error.log", "r", encoding="utf-8") as f:
+                error_output = f.read()
+            logging.debug(f"gpatch verbose output: {error_output}")
+            os.remove("gpatch_error.log")
         return versioned_output
 
     def process_patch(self):
