@@ -58,6 +58,9 @@ apply_patch() {
     fi
     cat "$TEMP_PATCH" | pbcopy
     cat "$TEMP_PATCH" > "$DEBUG_DIFF"
+    # Log the patch content being applied
+    echo "$(date): Patch content:" >> "$LOG_FILE"
+    cat "$TEMP_PATCH" >> "$LOG_FILE"
     python3 "$GROKPATCHER" < "$TEMP_PATCH" >&3
     rm -f "$TEMP_PATCH"
 }

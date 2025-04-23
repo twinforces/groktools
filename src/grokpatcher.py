@@ -53,7 +53,7 @@ class GrokPatcher:
 
         version_suffix = f".{self.version_count}"
         versioned_output = f"{output_path}{version_suffix}"
-        # Apply the patch using gpatch with -p0, specifying the input file
+        # Apply the patch using gpatch with -p0, using the input_path from !INPUT:
         cmd = f"gpatch -p0 --output={versioned_output} {input_path} < {extracted_diff_file} 2> gpatch_error.log"
         logging.debug(f"Executing: {cmd}")
         result = os.system(cmd)
