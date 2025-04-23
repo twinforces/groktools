@@ -49,12 +49,12 @@ apply_patch() {
     # Handle Unicode: UTF-8 encoding or normalization
     if [ "$NORMALIZE_UNICODE" -eq 1 ]; then
         # Normalize Unicode (e.g., right quote ’ to straight quote ')
-        iconv -f UTF-8 -t UTF-8 "$patch_file" | sed "s/\’/\'/g" | pbcopy
-        iconv -f UTF-8 -t UTF-8 "$patch_file" | sed "s/\’/\'/g" | python3 "$GROKPATCHER" >&3
+        (iconv -f UTF-8 -t UTF-8 "$patch_file" | sed "s/\’/\'/g"; echo) | pbcopy
+        (iconv -f UTF-8 -t UTF-8 "$patch_file" | sed "s/\’/\'/g"; echo) | python3 "$GROKPATCHER" >&3
     else
         # Preserve Unicode with UTF-8
-        iconv -f UTF-8 -t UTF-8 "$patch_file" | pbcopy
-        iconv -f UTF-8 -t UTF-8 "$patch_file" | python3 "$GROKPATCHER" >&3
+        (iconv -f UTF-8 -t UTF-8 "$patch_file"; echo) | pbcopy
+        (iconv -f UTF-8 -t UTF-8 "$patch_file"; echo) | python3 "$GROKPATCHER" >&3
     fi
 }
 
