@@ -1,10 +1,13 @@
 # diffextract.py
 # Extracts and unescapes unified diffs from .grokpatch files for gpatch.
+# Adds real timestamps to diff headers based on the input file's modification time.
 # Follows docs/grokpatcher.md, docs/prompts/diffu_prompt.md, and docs/prompts/bestpractices.md.
 
 import sys
 import logging
+import os
 from pathlib import Path
+from datetime import datetime
 
 # Constants
 LOG_FILE = "diffextract.log"
@@ -27,14 +30,16 @@ def validate_file(patch_file):
         raise ValueError(f"Patch file size exceeds limit")
 
 def extract_diff(patch_content):
-    """Extract unified diff from .grokpatch, unescaping backticks."""
+    """Extract unified diff from .grokpatch, unescaping backticks, and update timestamps."""
     lines = patch_content.splitlines()
     diff_lines = []
     in_diff = False
+    input_path = None
 
+    # Parse !INPUT: to get the input file path
     for line in lines:
-        if line.startswith("!INPUT:") or line.startswith("!OUTPUT:") or line.strip() in ("!GO!", "!NEXT!", "!DONE!"):
-            continue
+        if line.startswith("!INPUT:"):
+            input_path = line[len("!INPUT:"):].strip()
         if line.startswith("---"):
             in_diff = True
         if in_diff:
@@ -46,7 +51,27 @@ def extract_diff(patch_content):
         logging.error("No valid diff found in .grokpatch")
         raise ValueError("No valid diff found in .grokpatch")
 
-    return "\n".join(diff_lines) + "\n"
+    if not input_path or not Path(input_path).exists():
+        logging.warning(f"Input file not found for timestamp: {input_path}, using dummy timestamp")
+        timestamp = "1970-01-01 00:00:00"
+    else:
+        mtime = os.path.getmtime(input_path)
+        timestamp = datetime.fromtimestamp(mtime).strftime("%Y-%m-%d %H:%M:%S")
+
+    # Update timestamps in diff headers
+    updated_diff_lines = []
+    for line in diff_lines:
+        if line.startswith("---"):
+            parts = line.split("\t", 1)
+            updated_diff_lines.append(f"{parts[0]}\t{timestamp}")
+        elif line.startswith("+++"):
+            parts = line.split("\t", 1)
+            updated_diff_lines.append(f"{parts[0]}\t{timestamp}")
+        else:
+            updated_diff_lines.append(line)
+
+    # Ensure trailing newline and blank line after hunk
+    return "\n".join(updated_diff_lines) + "\n\n"
 
 def main():
     """Extract and unescape diff from a .grokpatch file, outputting to stdout."""
