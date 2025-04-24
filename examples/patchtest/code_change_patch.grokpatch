@@ -1,0 +1,17 @@
+!INPUT: examples/patchtest/code_change_before.py
+!OUTPUT: examples/patchtest/code_change_after.py
+--- examples/patchtest/code_change_before.py	2025-04-21 23:14:00.000000000 -0700
++++ examples/patchtest/code_change_after.py	2025-04-21 23:14:00.000000000 -0700
+@@ -1,5 +1,6 @@
+ # code_change_before.py
+-VERSION = "1.0.0"
++VERSION = "1.0.1"
+ 
+ def add(a, b):
++    result = a + b
+     return a + b
+@@ -7,3 +8,4 @@
+ # CHANGELOG
++# 1.0.1: Added result variable in add function
+ # 1.0.0: Initial release
+!GO!

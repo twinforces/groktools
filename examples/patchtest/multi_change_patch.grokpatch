@@ -1,0 +1,26 @@
+!INPUT: examples/patchtest/multi_change_before.txt
+!OUTPUT: examples/patchtest/multi_change_after.txt
+--- examples/patchtest/multi_change_before.txt	2025-04-21 23:14:00.000000000 -0700
++++ examples/patchtest/multi_change_after.txt	2025-04-21 23:14:00.000000000 -0700
+@@ -1,7 +1,7 @@
+ # Multi-Change Test File
+ 
+ Section 1: Introduction
+-This is the first section of the document.
++This is the updated first section of the document.
+ It provides a detailed overview.
+ 
+ Section 2: Details
+@@ -7,10 +7,10 @@
+ Section 2: Details
+-Here are the details of the project.
+-This section will be expanded later.
++Here are the expanded details of the project.
++This section has been updated with more content.
+ 
+ Section 3: Conclusion
+-The conclusion summarizes the findings.
+-This is the end.
++The conclusion summarizes the key findings.
++This is the final end.
+!GO!

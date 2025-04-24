@@ -1,12 +1,15 @@
 !INPUT: examples/patchtest/SecondComing.txt
 !OUTPUT: examples/patchtest/SecondComing.txt
---- examples/patchtest/SecondComing.txt	1970-01-01 00:00:00
-+++ examples/patchtest/SecondComing.txt	1970-01-01 00:00:00
-@@ -1,4 +1,5 @@
+--- examples/patchtest/SecondComing.txt	2025-04-21 23:14:00.000000000 -0700
++++ examples/patchtest/SecondComing.txt	2025-04-21 23:14:00.000000000 -0700
+@@ -1,6 +1,7 @@
  Turning and turning in the widening gyre   
 -The weasel cannot hear the wrangler;
 +The weasel cannot hear the wrangler's call;
  Things fall apart; the centre cannot hold;
 +'Mere anarchy is loosed upon the world,'
  Mere anarchy is loosed upon the world,
+ The blood-dimmed tide is loosed, and everywhere   
+ The ceremony of innocence is drowned;
+
 !GO!
